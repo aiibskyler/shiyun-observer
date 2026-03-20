@@ -223,6 +223,7 @@ export class PoemGenerator {
     const now = Date.now()
     const forcePreset = context.forcePreset === true
     const avoidPoems = new Set((context.avoidPoems || []).map(poem => poem.trim()).filter(Boolean))
+    const avoidPoemList = [...avoidPoems]
 
     // 先准备降级词汇（氛围词）
     // 检查是否在LLM失败冷却期
@@ -264,7 +265,7 @@ export class PoemGenerator {
         if (text) {
           if (avoidPoems.has(text)) {
             console.warn('[PoemGenerator] LLM生成结果与现有诗句重复，改用预制诗句')
-            text = this.getPresetPoem(context.clickedPoems, true)
+            text = this.getPresetPoem(context.clickedPoems, true, avoidPoemList)
             source = 'template'
           } else {
             source = 'llm'
@@ -273,7 +274,7 @@ export class PoemGenerator {
           }
         } else {
           console.warn('[PoemGenerator] LLM返回内容不够诗性，使用预制诗句')
-          text = this.getPresetPoem(context.clickedPoems)
+          text = this.getPresetPoem(context.clickedPoems, false, avoidPoemList)
           source = 'template'
         }
       } catch (error) {
@@ -281,11 +282,11 @@ export class PoemGenerator {
         lastLLMFailureTime = now
         const errorMessage = error instanceof Error ? error.message : String(error)
         console.warn(`[PoemGenerator] LLM请求失败（第${llmFailureCount}次），使用降级词汇:`, errorMessage)
-        text = this.getPresetPoem(context.clickedPoems, true)
+        text = this.getPresetPoem(context.clickedPoems, true, avoidPoemList)
         source = 'template'
       }
     } else {
-      text = this.getPresetPoem(context.clickedPoems)
+      text = this.getPresetPoem(context.clickedPoems, false, avoidPoemList)
       source = 'template'
       presetCount++
 
@@ -318,8 +319,12 @@ export class PoemGenerator {
    * @param clickedPoems 用户已点击诗句
    * @param forceMood 是否强制使用更稳定的氛围句
    */
-  private getPresetPoem(clickedPoems: string[] = [], forceMood: boolean = false): string {
-    return getPresetPoem(clickedPoems, forceMood)
+  private getPresetPoem(
+    clickedPoems: string[] = [],
+    forceMood: boolean = false,
+    avoidPoems: string[] = []
+  ): string {
+    return getPresetPoem(clickedPoems, forceMood, avoidPoems)
   }
 }
 

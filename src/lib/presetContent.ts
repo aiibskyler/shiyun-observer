@@ -15,6 +15,10 @@ function normalizePoem(text: string): string {
   return text.replace(/[，。！？；：、·\s]/g, '')
 }
 
+function createNormalizedPoemSet(poems: readonly string[] = []): Set<string> {
+  return new Set(poems.map(poem => normalizePoem(poem)).filter(Boolean))
+}
+
 function extractHintTokens(clickedPoems: string[] = []): string[] {
   const tokens = new Set<string>()
 
@@ -34,28 +38,41 @@ function extractHintTokens(clickedPoems: string[] = []): string[] {
   return [...tokens].slice(0, 24)
 }
 
-function getResonantPoems(clickedPoems: string[] = []): string[] {
+function getResonantPoems(clickedPoems: string[] = [], avoidPoems: string[] = []): string[] {
   if (clickedPoems.length === 0) {
     return []
   }
 
   const hints = extractHintTokens(clickedPoems)
-  const clickedSet = new Set(clickedPoems)
+  const clickedSet = createNormalizedPoemSet(clickedPoems)
+  const avoidSet = createNormalizedPoemSet(avoidPoems)
 
   return archivalPoems.filter(poem => {
-    if (clickedSet.has(poem)) {
+    const normalizedPoem = normalizePoem(poem)
+
+    if (clickedSet.has(normalizedPoem) || avoidSet.has(normalizedPoem)) {
       return false
     }
 
-    return hints.some(hint => poem.includes(hint))
+    return hints.some(hint => normalizedPoem.includes(hint))
   })
 }
 
-export function getPresetPoem(clickedPoems: string[] = [], forceMood: boolean = false): string {
-  const resonantPoems = getResonantPoems(clickedPoems)
+export function getPresetPoem(
+  clickedPoems: string[] = [],
+  forceMood: boolean = false,
+  avoidPoems: string[] = []
+): string {
+  const avoidSet = createNormalizedPoemSet(avoidPoems)
+  const resonantPoems = getResonantPoems(clickedPoems, avoidPoems)
+  const availableArchivalPoems = archivalPoems.filter(poem => !avoidSet.has(normalizePoem(poem)))
 
   if (resonantPoems.length > 0 && (forceMood || Math.random() < 0.68)) {
     return pick(resonantPoems)
+  }
+
+  if (availableArchivalPoems.length > 0) {
+    return pick(availableArchivalPoems)
   }
 
   return pick(archivalPoems)

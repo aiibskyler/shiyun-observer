@@ -68,7 +68,7 @@ type PoemExplosion = {
 }
 
 function formatDisplayedPoem(text: string): string {
-  return text.replace(/\s*\n+\s*/g, '，').trim()
+  return text.replace(/\s*\n+\s*/g, '\uFF0C').trim()
 }
 
 const STAR_VERTEX_SHADER = `
@@ -110,6 +110,10 @@ function clamp01(value: number): number {
 function easeOutCubic(value: number): number {
   const t = clamp01(value)
   return 1 - (1 - t) ** 3
+}
+
+function normalizePoemTextForDedup(text: string): string {
+  return text.replace(/[，。！？；：、\s]/g, '').trim()
 }
 
 function randomAnchor(shellMin: number, shellMax: number): THREE.Vector3 {
@@ -417,6 +421,7 @@ export function GameScene() {
   const backgroundStarFieldsRef = useRef<BackgroundStarField[]>([])
   const poemExplosionsRef = useRef<PoemExplosion[]>([])
   const pendingSpawnCountRef = useRef(0)
+  const pendingPoemTextsRef = useRef<Set<string>>(new Set())
   const raycasterRef = useRef(new THREE.Raycaster())
   const mouseRef = useRef(new THREE.Vector2())
   const hoveredPoemIdRef = useRef<string | null>(null)
@@ -765,6 +770,79 @@ export function GameScene() {
     }
   }
 
+  void spawnPoemNode
+
+  const spawnUniquePoemNode = async (forcePreset: boolean = false) => {
+    if (!poemGeneratorRef.current) {
+      return
+    }
+
+    const generator = poemGeneratorRef.current
+    const theta = Math.random() * Math.PI * 2
+    const phi = Math.random() * Math.PI
+    const radius = 18 + Math.random() * 20
+
+    try {
+      let newPoem: GamePoemNode | null = null
+
+      for (let attempt = 0; attempt < 4; attempt += 1) {
+        const { likedPoems, currentStep, poems } = useGameStore.getState()
+        const avoidPoems = [
+          ...poems.map(poem => poem.text),
+          ...Array.from(pendingPoemTextsRef.current),
+        ]
+
+        const candidate = await generator.generatePoem({
+          clickedPoems: likedPoems,
+          avoidPoems,
+          step: currentStep,
+          clickRate: currentStep > 0 ? likedPoems.length / currentStep : 0,
+          forcePreset,
+        })
+
+        const normalizedText = normalizePoemTextForDedup(candidate.text)
+        const existingPoems = useGameStore.getState().poems
+        const hasDuplicate =
+          !normalizedText ||
+          existingPoems.some(poem => normalizePoemTextForDedup(poem.text) === normalizedText) ||
+          pendingPoemTextsRef.current.has(normalizedText)
+
+        if (!hasDuplicate) {
+          pendingPoemTextsRef.current.add(normalizedText)
+          newPoem = candidate
+          break
+        }
+      }
+      if (!newPoem) {
+        console.warn('[GameScene] Skipped duplicate poem after retrying generation')
+        return
+      }
+
+      newPoem.position = {
+        x: radius * Math.sin(phi) * Math.cos(theta),
+        y: radius * Math.sin(phi) * Math.sin(theta),
+        z: radius * Math.cos(phi),
+      }
+
+      addPoem(newPoem)
+    } catch (error) {
+      console.error('[GameScene] 生成诗句失败:', error)
+    } finally {
+      const activeTextSet = new Set(
+        useGameStore
+          .getState()
+          .poems.map(poem => normalizePoemTextForDedup(poem.text))
+          .filter(Boolean)
+      )
+
+      pendingPoemTextsRef.current.forEach(text => {
+        if (activeTextSet.has(text)) {
+          pendingPoemTextsRef.current.delete(text)
+        }
+      })
+    }
+  }
+
   const trySpawnBatch = async (batchSize: number, presetCount: number) => {
     const { poems, maxPoems } = useGameStore.getState()
     const remainingSlots = Math.max(0, maxPoems - poems.length - pendingSpawnCountRef.current)
@@ -780,7 +858,7 @@ export function GameScene() {
     for (let index = 0; index < actualBatchSize; index += 1) {
       pendingSpawnCountRef.current += 1
       tasks.push(
-        spawnPoemNode(index < forcedPresetCount).finally(() => {
+        spawnUniquePoemNode(index < forcedPresetCount).finally(() => {
           pendingSpawnCountRef.current = Math.max(0, pendingSpawnCountRef.current - 1)
         })
       )
@@ -975,6 +1053,7 @@ export function GameScene() {
 
       poemMeshesRef.current.clear()
       clickBurstsRef.current.clear()
+      pendingPoemTextsRef.current.clear()
       poemExplosionsRef.current = []
       backgroundStarFieldsRef.current = []
     }
