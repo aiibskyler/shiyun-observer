@@ -29,32 +29,40 @@ function normalizePoemText(text: string): string {
     .replace(/```[\s\S]*?```/g, '')
     .replace(/[""'`“”‘’《》【】]/g, '')
     .replace(/^\s*(诗句|答案|输出|正文)\s*[:：]\s*/gm, '')
+    .replace(/^\s*(上联|下联|其一|其二)\s*[:：]\s*/gm, '')
     .replace(/^\s*[-*•\d.]+\s*/gm, '')
     .replace(/\r/g, '')
     .trim()
 }
 
-function extractPoeticLine(raw: string): string {
+function cleanPoemSegment(text: string): string {
+  return text
+    .replace(/[。！？；;,.!?、]+$/g, '')
+    .replace(/[()（）]/g, '')
+    .trim()
+}
+
+function splitCoupletCandidates(raw: string): string[] {
   const normalized = normalizePoemText(raw)
   const lines = normalized
     .split('\n')
-    .map(line => line.trim())
+    .map(line => cleanPoemSegment(line))
     .filter(Boolean)
 
-  const candidates = lines.length > 0 ? lines : [normalized]
-
-  for (const candidate of candidates) {
-    const cleaned = candidate
-      .replace(/[。！？；;,.!?\s]+$/g, '')
-      .replace(/[()（）]/g, '')
-      .trim()
-
-    if (isPoeticLine(cleaned)) {
-      return cleaned
-    }
+  if (lines.length >= 2) {
+    return lines.slice(0, 2)
   }
 
-  return ''
+  const inlineSegments = normalized
+    .split(/[，；,]/)
+    .map(segment => cleanPoemSegment(segment))
+    .filter(Boolean)
+
+  if (inlineSegments.length >= 2) {
+    return inlineSegments.slice(0, 2)
+  }
+
+  return lines
 }
 
 function isPoeticLine(text: string): boolean {
@@ -91,6 +99,29 @@ function isPoeticLine(text: string): boolean {
   }
 
   return true
+}
+
+function isPoeticCouplet(lines: string[]): boolean {
+  if (lines.length !== 2) {
+    return false
+  }
+
+  if (!lines.every(isPoeticLine)) {
+    return false
+  }
+
+  const lengths = lines.map(line => line.replace(/[，。、！？；：·\s]/g, '').length)
+  return Math.abs(lengths[0] - lengths[1]) <= 2
+}
+
+function extractPoeticCouplet(raw: string): string {
+  const lines = splitCoupletCandidates(raw)
+
+  if (isPoeticCouplet(lines)) {
+    return lines.join('\n')
+  }
+
+  return ''
 }
 
 /**
@@ -203,7 +234,7 @@ export class PoemGenerator {
           text += chunk
         }
 
-        text = extractPoeticLine(text)
+        text = extractPoeticCouplet(text)
 
         if (text) {
           source = 'llm'

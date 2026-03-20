@@ -1026,6 +1026,7 @@ export function GameScene() {
             lineHeight: 1.45,
             textAlign: 'center',
             pointerEvents: 'none',
+            whiteSpace: 'pre-wrap',
           }}
         >
           {hoveredPoemText}

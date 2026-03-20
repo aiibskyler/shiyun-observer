@@ -17,6 +17,7 @@ export function AnalysisPage() {
 
   const [isStreaming, setIsStreaming] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [retryNonce, setRetryNonce] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -68,10 +69,21 @@ export function AnalysisPage() {
     return () => {
       mounted = false
     }
-  }, [likedPoems, llmConfig, poems, totalGenerated, updateCurrentInsight])
+  }, [likedPoems, llmConfig, poems, retryNonce, totalGenerated, updateCurrentInsight])
 
   const handleRestart = () => {
     reset()
+  }
+
+  const handleRetry = () => {
+    if (isStreaming) {
+      return
+    }
+
+    updateCurrentInsight('')
+    setError(null)
+    setIsStreaming(true)
+    setRetryNonce(value => value + 1)
   }
 
   return (
@@ -291,7 +303,24 @@ export function AnalysisPage() {
               marginBottom: '24px',
             }}
           >
-            {error}
+            <div style={{ marginBottom: '14px' }}>{error}</div>
+            <button
+              onClick={handleRetry}
+              disabled={isStreaming}
+              style={{
+                padding: '10px 16px',
+                background: 'rgba(255, 255, 255, 0.08)',
+                border: '1px solid rgba(255, 255, 255, 0.14)',
+                borderRadius: '10px',
+                color: 'white',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: isStreaming ? 'not-allowed' : 'pointer',
+                opacity: isStreaming ? 0.5 : 1,
+              }}
+            >
+              重试生成
+            </button>
           </div>
         )}
 
