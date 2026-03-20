@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useGameStore } from '../stores/gameStore'
 import { streamLLM, generateInsightPrompt, generateInsightSystemPrompt } from '../lib/llm'
+import { CosmicBackdrop } from './CosmicBackdrop'
 
 export function AnalysisPage() {
   const {
@@ -89,8 +90,10 @@ export function AnalysisPage() {
         padding: '20px',
         fontFamily: 'sans-serif',
         zIndex: 1000,
+        overflow: 'hidden',
       }}
     >
+      <CosmicBackdrop variant="analysis" />
       <div
         style={{
           maxWidth: '1120px',
@@ -103,6 +106,8 @@ export function AnalysisPage() {
           padding: '48px',
           border: '1px solid rgba(255, 255, 255, 0.1)',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          position: 'relative',
+          zIndex: 1,
         }}
       >
         {/* 标题 */}

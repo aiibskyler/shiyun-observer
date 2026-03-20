@@ -6,6 +6,7 @@ import {
   loadConfig,
   clearConfig,
 } from '../lib/storage'
+import { CosmicBackdrop } from './CosmicBackdrop'
 
 export function WelcomePage() {
   const startGame = useGameStore(s => s.startGame)
@@ -94,14 +95,18 @@ export function WelcomePage() {
         zIndex: 1000,
         padding: '20px',
         overflowY: 'auto',
+        overflowX: 'hidden',
       }}
     >
+      <CosmicBackdrop variant="welcome" />
       <div
         style={{
           width: 'min(100%, 600px)',
           display: 'flex',
           flexDirection: 'column',
           gap: '14px',
+          position: 'relative',
+          zIndex: 1,
         }}
       >
         <div
