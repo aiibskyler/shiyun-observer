@@ -72,11 +72,11 @@ export function getPresetContent(
 }
 
 export const GENERATION_STRATEGY = {
-  PRESET_RATIO: 0.97,
+  PRESET_RATIO: 0.92,
   llm: {
-    interval: 24,
+    interval: 12,
     afterClick: true,
-    boostMultiplier: 0.9,
+    boostMultiplier: 1.2,
   },
 }
 
@@ -93,5 +93,5 @@ export function shouldUseLLM(presetCount: number, clickRate: number): boolean {
     llmProbability *= 1 + clickRate * llm.boostMultiplier
   }
 
-  return Math.random() < Math.min(llmProbability, 0.1)
+  return Math.random() < Math.min(llmProbability, 0.18)
 }

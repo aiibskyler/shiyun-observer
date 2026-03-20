@@ -22,7 +22,7 @@ let llmFailureCount = 0
 let lastLLMFailureTime = 0
 const FAILURE_COOLDOWN = 30000 // 失败后30秒内降低LLM使用频率
 let lastLLMRequestTime = 0
-const REQUEST_COOLDOWN = 25000 // 正常情况下也限制 LLM 的最小请求间隔
+const REQUEST_COOLDOWN = 12000 // 中高频模式下限制 LLM 的最小请求间隔
 
 function normalizePoemText(text: string): string {
   return text

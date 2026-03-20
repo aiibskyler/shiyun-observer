@@ -289,7 +289,7 @@ export function GameUI() {
             fontFamily: '"Songti SC", "STSong", serif',
           }}
         >
-          词汇来源：LLM {llmCount} · 诗库回响 {presetCount} · 生成进度 {Math.round(generationProgress)}%
+          诗意来处：LLM {llmCount} · 诗库回响 {presetCount} · 生成进度 {Math.round(generationProgress)}%
         </div>
       </div>
     </>
