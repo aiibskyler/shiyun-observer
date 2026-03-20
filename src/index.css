@@ -1,0 +1,98 @@
+:root {
+  color-scheme: dark;
+  --bg-night: #020611;
+  --bg-deep: #061126;
+  --text-main: rgba(244, 247, 255, 0.96);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top, rgba(120, 182, 255, 0.12), transparent 28%),
+    radial-gradient(circle at 80% 18%, rgba(255, 231, 165, 0.1), transparent 22%),
+    linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-night) 100%);
+  color: var(--text-main);
+  font-family: "Microsoft YaHei UI", "PingFang SC", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.08;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.3) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.3) 1px, transparent 1px);
+  background-size: 120px 120px;
+  mask-image: radial-gradient(circle at center, black 36%, transparent 95%);
+}
+
+::selection {
+  background: rgba(155, 206, 255, 0.35);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+@keyframes softPulse {
+  0%,
+  100% {
+    transform: scale(0.92);
+    opacity: 0.85;
+  }
+
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+
+@keyframes meaningWave {
+  0% {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+
+  30% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.18);
+  }
+}
+
+@keyframes driftUp {
+  0% {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+
+  18% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(-22px);
+    opacity: 0;
+  }
+}
