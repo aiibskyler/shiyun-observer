@@ -92,217 +92,249 @@ export function WelcomePage() {
         justifyContent: 'center',
         fontFamily: 'sans-serif',
         zIndex: 1000,
+        padding: '20px',
+        overflowY: 'auto',
       }}
     >
       <div
         style={{
-          maxWidth: '600px',
-          width: '90%',
-          padding: '48px',
-          background: 'rgba(255, 255, 255, 0.03)',
-          backdropFilter: 'blur(20px)',
-          borderRadius: '24px',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          width: 'min(100%, 600px)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '14px',
         }}
       >
-        {/* 标题 */}
-        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <h1
-            style={{
-              color: 'white',
-              fontSize: '48px',
-              fontWeight: 'bold',
-              margin: '0 0 16px 0',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            观测即意义
-          </h1>
-          <p
-            style={{
-              color: 'rgba(255, 255, 255, 0.6)',
-              fontSize: '16px',
-              margin: 0,
-            }}
-          >
-            诗云 · 一个关于审美与意义构建的实验
-          </p>
-        </div>
-
-        {/* 说明 */}
         <div
           style={{
-            color: 'rgba(255, 255, 255, 0.8)',
-            fontSize: '14px',
-            lineHeight: '1.8',
-            marginBottom: '32px',
-            padding: '20px',
-            background: 'rgba(255, 255, 255, 0.05)',
-            borderRadius: '12px',
+            padding: 'clamp(22px, 4vw, 36px)',
+            background: 'rgba(255, 255, 255, 0.03)',
+            backdropFilter: 'blur(20px)',
+            borderRadius: '24px',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
           }}
         >
-          <p style={{ margin: '0 0 8px 0' }}>
-            🌸 <strong>玩法：</strong>
-          </p>
-          <p style={{ margin: '0 0 8px' }}>
-            诗句会从虚空中浮现，短暂停留后消散
-          </p>
-          <p style={{ margin: '0 0 8px' }}>
-            点击你喜欢的诗句，让 AI 了解你的品味
-          </p>
-          <p style={{ margin: '0' }}>
-            最后，AI 将为你生成一份专属的意义洞察报告
-          </p>
-        </div>
+          {/* 标题 */}
+          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+            <h1
+              style={{
+                color: 'white',
+                fontSize: 'clamp(32px, 6vw, 46px)',
+                fontWeight: 'bold',
+                lineHeight: 1.08,
+                margin: '0 0 10px 0',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
+              观测即意义
+            </h1>
+            <p
+              style={{
+                color: 'rgba(255, 255, 255, 0.6)',
+                fontSize: '14px',
+                margin: 0,
+              }}
+            >
+              诗云 · 一个关于审美与意义构建的实验
+            </p>
+          </div>
 
-        {/* API Key 输入 */}
-        <div style={{ marginBottom: '24px' }}>
-          <label
-            style={{
-              color: 'rgba(255, 255, 255, 0.8)',
-              fontSize: '14px',
-              display: 'block',
-              marginBottom: '12px',
-              fontWeight: '500',
-            }}
-          >
-            选择 AI 模型
-          </label>
+          {/* 说明 */}
           <div
             style={{
-              display: 'flex',
-              gap: '12px',
-              marginBottom: '16px',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+              gap: '10px',
+              marginBottom: '20px',
             }}
           >
-            <button
-              onClick={() => setProvider('openai')}
+            {[
+              ['悬停阅读', '将鼠标移入诗云，中央浮层会显现诗句'],
+              ['双击赋义', '双击你喜欢的节点，让系统记住你的偏好'],
+              ['结束观测', '在意义洞察中回看你的选择与审美轨迹'],
+            ].map(([title, description]) => (
+              <div
+                key={title}
+                style={{
+                  padding: '12px 14px',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '14px',
+                }}
+              >
+                <div
+                  style={{
+                    color: 'rgba(240, 244, 255, 0.92)',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    marginBottom: '4px',
+                  }}
+                >
+                  {title}
+                </div>
+                <div
+                  style={{
+                    color: 'rgba(255, 255, 255, 0.62)',
+                    fontSize: '12px',
+                    lineHeight: 1.55,
+                  }}
+                >
+                  {description}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* API Key 输入 */}
+          <div style={{ marginBottom: 0 }}>
+            <label
               style={{
-                flex: 1,
-                padding: '12px 20px',
-                background:
-                  provider === 'openai'
-                    ? 'rgba(99, 102, 241, 0.3)'
-                    : 'rgba(255, 255, 255, 0.05)',
-                border:
-                  provider === 'openai'
-                    ? '2px solid rgba(99, 102, 241, 0.6)'
-                    : '1px solid rgba(255, 255, 255, 0.1)',
+                color: 'rgba(255, 255, 255, 0.8)',
+                fontSize: '14px',
+                display: 'block',
+                marginBottom: '10px',
+                fontWeight: '500',
+              }}
+            >
+              选择 AI 模型
+            </label>
+            <div
+              style={{
+                display: 'flex',
+                gap: '12px',
+                marginBottom: '14px',
+              }}
+            >
+              <button
+                onClick={() => setProvider('openai')}
+                style={{
+                  flex: 1,
+                  padding: '11px 16px',
+                  background:
+                    provider === 'openai'
+                      ? 'rgba(99, 102, 241, 0.3)'
+                      : 'rgba(255, 255, 255, 0.05)',
+                  border:
+                    provider === 'openai'
+                      ? '2px solid rgba(99, 102, 241, 0.6)'
+                      : '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '12px',
+                  color: 'white',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  fontWeight: provider === 'openai' ? '600' : '400',
+                }}
+              >
+                OpenAI
+              </button>
+              <button
+                onClick={() => setProvider('anthropic')}
+                style={{
+                  flex: 1,
+                  padding: '11px 16px',
+                  background:
+                    provider === 'anthropic'
+                      ? 'rgba(99, 102, 241, 0.3)'
+                      : 'rgba(255, 255, 255, 0.05)',
+                  border:
+                    provider === 'anthropic'
+                      ? '2px solid rgba(99, 102, 241, 0.6)'
+                      : '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '12px',
+                  color: 'white',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  fontWeight: provider === 'anthropic' ? '600' : '400',
+                }}
+              >
+                Anthropic
+              </button>
+            </div>
+
+            <input
+              type="password"
+              placeholder="输入 API Key"
+              autoComplete="off"
+              data-form-type="other"
+              value={apiKey}
+              onChange={e => {
+                setApiKey(e.target.value)
+                setIsValid(e.target.value.trim().length > 0)
+              }}
+              onKeyDown={handleKeyDown}
+              style={{
+                width: '100%',
+                padding: '13px 16px',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
                 borderRadius: '12px',
                 color: 'white',
                 fontSize: '14px',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                fontWeight: provider === 'openai' ? '600' : '400',
-              }}
-            >
-              OpenAI (GPT-4)
-            </button>
-            <button
-              onClick={() => setProvider('anthropic')}
-              style={{
-                flex: 1,
-                padding: '12px 20px',
-                background:
-                  provider === 'anthropic'
-                    ? 'rgba(99, 102, 241, 0.3)'
-                    : 'rgba(255, 255, 255, 0.05)',
-                border:
-                  provider === 'anthropic'
-                    ? '2px solid rgba(99, 102, 241, 0.6)'
-                    : '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: '12px',
-                color: 'white',
-                fontSize: '14px',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                fontWeight: provider === 'anthropic' ? '600' : '400',
-              }}
-            >
-              Anthropic (Claude)
-            </button>
-          </div>
-
-          <input
-            type="password"
-            placeholder="输入 API Key"
-            autoComplete="off"
-            data-form-type="other"
-            value={apiKey}
-            onChange={e => {
-              setApiKey(e.target.value)
-              setIsValid(e.target.value.trim().length > 0)
-            }}
-            onKeyDown={handleKeyDown}
-            style={{
-              width: '100%',
-              padding: '14px 18px',
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: '12px',
-              color: 'white',
-              fontSize: '14px',
-              outline: 'none',
-              transition: 'all 0.2s',
-              boxSizing: 'border-box',
-            }}
-            onFocus={e => {
-              e.target.style.borderColor = 'rgba(99, 102, 241, 0.6)'
-              e.target.style.background = 'rgba(255, 255, 255, 0.08)'
-            }}
-            onBlur={e => {
-              e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'
-              e.target.style.background = 'rgba(255, 255, 255, 0.05)'
-            }}
-          />
-
-          {/* 可选：自定义模型 */}
-          <div style={{ marginTop: '12px' }}>
-            <input
-              type="text"
-              placeholder={`模型（可选，默认：${
-                provider === 'openai' ? 'gpt-4o-mini' : 'claude-3-haiku'
-              }）`}
-              autoComplete="off"
-              value={model}
-              onChange={e => setModel(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px 18px',
-                background: 'rgba(255, 255, 255, 0.03)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: '10px',
-                color: 'rgba(255, 255, 255, 0.8)',
-                fontSize: '13px',
                 outline: 'none',
+                transition: 'all 0.2s',
                 boxSizing: 'border-box',
+                marginBottom: '10px',
+              }}
+              onFocus={e => {
+                e.target.style.borderColor = 'rgba(99, 102, 241, 0.6)'
+                e.target.style.background = 'rgba(255, 255, 255, 0.08)'
+              }}
+              onBlur={e => {
+                e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'
+                e.target.style.background = 'rgba(255, 255, 255, 0.05)'
               }}
             />
-          </div>
 
-          {/* 可选：自定义 baseUrl */}
-          <div style={{ marginTop: '12px' }}>
-            <input
-              type="text"
-              placeholder={`Base URL（可选，用于代理或第三方服务）`}
-              autoComplete="off"
-              value={baseUrl}
-              onChange={e => setBaseUrl(e.target.value)}
+            <div
               style={{
-                width: '100%',
-                padding: '12px 18px',
-                background: 'rgba(255, 255, 255, 0.03)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: '10px',
-                color: 'rgba(255, 255, 255, 0.8)',
-                fontSize: '13px',
-                outline: 'none',
-                boxSizing: 'border-box',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                gap: '10px',
               }}
-            />
+            >
+              <input
+                type="text"
+                placeholder={`模型（可选，默认：${
+                  provider === 'openai' ? 'gpt-4o-mini' : 'claude-3-haiku'
+                }）`}
+                autoComplete="off"
+                value={model}
+                onChange={e => setModel(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '11px 16px',
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '10px',
+                  color: 'rgba(255, 255, 255, 0.8)',
+                  fontSize: '13px',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+              <input
+                type="text"
+                placeholder="Base URL（可选）"
+                autoComplete="off"
+                value={baseUrl}
+                onChange={e => setBaseUrl(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '11px 16px',
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '10px',
+                  color: 'rgba(255, 255, 255, 0.8)',
+                  fontSize: '13px',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </div>
             <div
               style={{
                 fontSize: '11px',
@@ -311,125 +343,137 @@ export function WelcomePage() {
                 marginLeft: '2px',
               }}
             >
-              例如：https://api.openai-proxy.com 或兼容 OpenAI API 的第三方服务
+              可用于代理或兼容 OpenAI API 的第三方服务
             </div>
           </div>
         </div>
 
-        {/* 隐私说明 */}
         <div
           style={{
-            color: 'rgba(255, 255, 255, 0.5)',
-            fontSize: '12px',
-            marginBottom: '16px',
-            textAlign: 'center',
+            padding: '14px 16px 16px',
+            background: 'rgba(5, 10, 24, 0.72)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '20px',
+            backdropFilter: 'blur(18px)',
+            boxShadow: '0 18px 40px -24px rgba(0, 0, 0, 0.7)',
           }}
         >
-          {shouldSaveConfig ? (
-            <>🔒 配置将保存在本地浏览器中</>
-          ) : (
-            <>🔒 本次使用后不会保存配置</>
-          )}
-        </div>
+          {/* 隐私说明 */}
+          <div
+            style={{
+              color: 'rgba(255, 255, 255, 0.5)',
+              fontSize: '12px',
+              marginBottom: '12px',
+              textAlign: 'center',
+            }}
+          >
+            {shouldSaveConfig ? (
+              <>🔒 配置将保存在本地浏览器中</>
+            ) : (
+              <>🔒 本次使用后不会保存配置</>
+            )}
+          </div>
 
-        {/* 保存配置选项 */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            marginBottom: '16px',
-          }}
-        >
-          <label
+          {/* 保存配置选项 */}
+          <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              color: 'rgba(255, 255, 255, 0.6)',
-              fontSize: '13px',
-              cursor: 'pointer',
-              userSelect: 'none',
+              justifyContent: 'center',
+              gap: '8px',
+              marginBottom: '14px',
+              flexWrap: 'wrap',
             }}
           >
-            <input
-              type="checkbox"
-              checked={shouldSaveConfig}
-              onChange={e => setShouldSaveConfig(e.target.checked)}
+            <label
               style={{
-                width: '16px',
-                height: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                color: 'rgba(255, 255, 255, 0.6)',
+                fontSize: '13px',
                 cursor: 'pointer',
-              }}
-            />
-            记住配置
-          </label>
-
-          {apiKey && (
-            <button
-              onClick={handleClearConfig}
-              style={{
-                padding: '6px 12px',
-                background: 'rgba(255, 100, 100, 0.1)',
-                border: '1px solid rgba(255, 100, 100, 0.2)',
-                borderRadius: '6px',
-                color: 'rgba(255, 100, 100, 0.8)',
-                fontSize: '11px',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = 'rgba(255, 100, 100, 0.2)'
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = 'rgba(255, 100, 100, 0.1)'
+                userSelect: 'none',
               }}
             >
-              清除
-            </button>
-          )}
-        </div>
+              <input
+                type="checkbox"
+                checked={shouldSaveConfig}
+                onChange={e => setShouldSaveConfig(e.target.checked)}
+                style={{
+                  width: '16px',
+                  height: '16px',
+                  cursor: 'pointer',
+                }}
+              />
+              记住配置
+            </label>
 
-        {/* 开始按钮 */}
-        <button
-          onClick={handleStart}
-          disabled={!isValid}
-          style={{
-            width: '100%',
-            padding: '16px',
-            background: isValid
-              ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-              : 'rgba(255, 255, 255, 0.05)',
-            border: 'none',
-            borderRadius: '14px',
-            color: 'white',
-            fontSize: '16px',
-            fontWeight: '600',
-            cursor: isValid ? 'pointer' : 'not-allowed',
-            opacity: isValid ? 1 : 0.5,
-            transition: 'all 0.3s',
-            boxShadow: isValid
-              ? '0 10px 30px -10px rgba(102, 126, 234, 0.5)'
-              : 'none',
-          }}
-          onMouseEnter={e => {
-            if (isValid) {
-              e.currentTarget.style.transform = 'translateY(-2px)'
-              e.currentTarget.style.boxShadow =
-                '0 15px 35px -10px rgba(102, 126, 234, 0.6)'
-            }
-          }}
-          onMouseLeave={e => {
-            if (isValid) {
-              e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow =
-                '0 10px 30px -10px rgba(102, 126, 234, 0.5)'
-            }
-          }}
-        >
-          开始观测
-        </button>
+            {apiKey && (
+              <button
+                onClick={handleClearConfig}
+                style={{
+                  padding: '6px 12px',
+                  background: 'rgba(255, 100, 100, 0.1)',
+                  border: '1px solid rgba(255, 100, 100, 0.2)',
+                  borderRadius: '6px',
+                  color: 'rgba(255, 100, 100, 0.8)',
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = 'rgba(255, 100, 100, 0.2)'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = 'rgba(255, 100, 100, 0.1)'
+                }}
+              >
+                清除
+              </button>
+            )}
+          </div>
+
+          {/* 开始按钮 */}
+          <button
+            onClick={handleStart}
+            disabled={!isValid}
+            style={{
+              width: '100%',
+              padding: '15px 16px',
+              background: isValid
+                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                : 'rgba(255, 255, 255, 0.05)',
+              border: 'none',
+              borderRadius: '14px',
+              color: 'white',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: isValid ? 'pointer' : 'not-allowed',
+              opacity: isValid ? 1 : 0.5,
+              transition: 'all 0.3s',
+              boxShadow: isValid
+                ? '0 10px 30px -10px rgba(102, 126, 234, 0.5)'
+                : 'none',
+            }}
+            onMouseEnter={e => {
+              if (isValid) {
+                e.currentTarget.style.transform = 'translateY(-2px)'
+                e.currentTarget.style.boxShadow =
+                  '0 15px 35px -10px rgba(102, 126, 234, 0.6)'
+              }
+            }}
+            onMouseLeave={e => {
+              if (isValid) {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow =
+                  '0 10px 30px -10px rgba(102, 126, 234, 0.5)'
+              }
+            }}
+          >
+            开始观测
+          </button>
+        </div>
       </div>
     </div>
   )

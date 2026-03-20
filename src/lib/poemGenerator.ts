@@ -14,11 +14,15 @@ const CONFIG = {
 
 // 预制内容计数器
 let presetCount = 0
+const recentLLMPoemQueue: string[] = []
+const RECENT_LLM_QUEUE_LIMIT = 2
 
 // LLM失败追踪
 let llmFailureCount = 0
 let lastLLMFailureTime = 0
 const FAILURE_COOLDOWN = 30000 // 失败后30秒内降低LLM使用频率
+let lastLLMRequestTime = 0
+const REQUEST_COOLDOWN = 25000 // 正常情况下也限制 LLM 的最小请求间隔
 
 function normalizePoemText(text: string): string {
   return text
@@ -132,6 +136,23 @@ export class PoemGenerator {
     this.llmConfig = llmConfig
   }
 
+  private consumeRecentLLMPoem(): string | null {
+    const poem = recentLLMPoemQueue.shift()
+    return poem ?? null
+  }
+
+  private rememberRecentLLMPoem(text: string) {
+    if (!text) {
+      return
+    }
+
+    recentLLMPoemQueue.push(text)
+
+    while (recentLLMPoemQueue.length > RECENT_LLM_QUEUE_LIMIT) {
+      recentLLMPoemQueue.shift()
+    }
+  }
+
   /**
    * 生成单个诗句
    */
@@ -143,21 +164,31 @@ export class PoemGenerator {
   }): Promise<GamePoemNode> {
     const now = Date.now()
     const forcePreset = context.forcePreset === true
+    const recentLLMPoem = forcePreset ? null : this.consumeRecentLLMPoem()
 
     // 先准备降级词汇（氛围词）
     // 检查是否在LLM失败冷却期
     const isInCooldown = now - lastLLMFailureTime < FAILURE_COOLDOWN
+    const isInRequestCooldown = now - lastLLMRequestTime < REQUEST_COOLDOWN
 
     // 决定是否使用 LLM
     // 如果在冷却期，直接使用降级词汇，不请求LLM
-    let useLLM = !forcePreset && !isInCooldown && shouldUseLLM(presetCount, context.clickRate)
+    let useLLM =
+      !recentLLMPoem &&
+      !forcePreset &&
+      !isInCooldown &&
+      !isInRequestCooldown &&
+      shouldUseLLM(presetCount, context.clickRate)
 
-    let text = ''
-    let source: GamePoemNode['source'] = 'template'
+    let text = recentLLMPoem ?? ''
+    let source: GamePoemNode['source'] = recentLLMPoem ? 'llm' : 'template'
 
-    if (useLLM) {
+    if (recentLLMPoem) {
+      source = 'llm'
+    } else if (useLLM) {
       // 尝试使用 LLM 生成，同时已经有降级词汇作为后备
       try {
+        lastLLMRequestTime = now
         const prompt = generatePoemPrompt({
           clickedPoems: context.clickedPoems,
         })
@@ -176,6 +207,7 @@ export class PoemGenerator {
 
         if (text) {
           source = 'llm'
+          this.rememberRecentLLMPoem(text)
           console.log('[PoemGenerator] LLM生成成功:', text)
           llmFailureCount = 0
         } else {
