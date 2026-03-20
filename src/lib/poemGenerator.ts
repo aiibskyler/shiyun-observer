@@ -42,6 +42,47 @@ function cleanPoemSegment(text: string): string {
     .trim()
 }
 
+function trySplitSingleLineCouplet(text: string): string[] {
+  const cleaned = cleanPoemSegment(text)
+
+  if (!cleaned) {
+    return []
+  }
+
+  const explicitSegments = cleaned
+    .split(/[，；、,]/)
+    .map(segment => cleanPoemSegment(segment))
+    .filter(Boolean)
+
+  if (explicitSegments.length >= 2) {
+    return explicitSegments.slice(0, 2)
+  }
+
+  const compact = cleaned.replace(/[，。、！？；：·\s]/g, '')
+  const length = compact.length
+
+  if (length < 8 || length > 20) {
+    return []
+  }
+
+  const half = Math.floor(length / 2)
+  const candidates =
+    length % 2 === 0
+      ? [[compact.slice(0, half), compact.slice(half)]]
+      : [
+          [compact.slice(0, half), compact.slice(half)],
+          [compact.slice(0, half + 1), compact.slice(half + 1)],
+        ]
+
+  for (const [left, right] of candidates) {
+    if (left.length >= 4 && left.length <= 10 && right.length >= 4 && right.length <= 10) {
+      return [left, right]
+    }
+  }
+
+  return []
+}
+
 function splitCoupletCandidates(raw: string): string[] {
   const normalized = normalizePoemText(raw)
   const lines = normalized
@@ -60,6 +101,10 @@ function splitCoupletCandidates(raw: string): string[] {
 
   if (inlineSegments.length >= 2) {
     return inlineSegments.slice(0, 2)
+  }
+
+  if (lines.length === 1) {
+    return trySplitSingleLineCouplet(lines[0])
   }
 
   return lines
