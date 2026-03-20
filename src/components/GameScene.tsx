@@ -728,7 +728,7 @@ export function GameScene() {
   }
 
   const spawnPoemNode = async (forcePreset: boolean = false) => {
-    const { likedPoems, currentStep } = useGameStore.getState()
+    const { likedPoems, currentStep, poems } = useGameStore.getState()
 
     if (!poemGeneratorRef.current) {
       return
@@ -736,6 +736,7 @@ export function GameScene() {
 
     const generator = poemGeneratorRef.current
     const clickedPoems = likedPoems
+    const avoidPoems = poems.map(poem => poem.text)
     const step = currentStep
     const clickRate = currentStep > 0 ? likedPoems.length / currentStep : 0
 
@@ -746,6 +747,7 @@ export function GameScene() {
     try {
       const newPoem = await generator.generatePoem({
         clickedPoems,
+        avoidPoems,
         step,
         clickRate,
         forcePreset,

@@ -215,12 +215,14 @@ export class PoemGenerator {
    */
   async generatePoem(context: {
     clickedPoems: string[]
+    avoidPoems?: string[]
     step: number
     clickRate: number
     forcePreset?: boolean
   }): Promise<GamePoemNode> {
     const now = Date.now()
     const forcePreset = context.forcePreset === true
+    const avoidPoems = new Set((context.avoidPoems || []).map(poem => poem.trim()).filter(Boolean))
 
     // 先准备降级词汇（氛围词）
     // 检查是否在LLM失败冷却期
@@ -244,6 +246,7 @@ export class PoemGenerator {
         lastLLMRequestTime = now
         const prompt = generatePoemPrompt({
           clickedPoems: context.clickedPoems,
+          avoidPoems: [...avoidPoems],
         })
 
         for await (const chunk of streamLLM(this.llmConfig, {
@@ -259,9 +262,15 @@ export class PoemGenerator {
         text = extractPoeticCouplet(text)
 
         if (text) {
-          source = 'llm'
-          console.log('[PoemGenerator] LLM生成成功:', text)
-          llmFailureCount = 0
+          if (avoidPoems.has(text)) {
+            console.warn('[PoemGenerator] LLM生成结果与现有诗句重复，改用预制诗句')
+            text = this.getPresetPoem(context.clickedPoems, true)
+            source = 'template'
+          } else {
+            source = 'llm'
+            console.log('[PoemGenerator] LLM生成成功:', text)
+            llmFailureCount = 0
+          }
         } else {
           console.warn('[PoemGenerator] LLM返回内容不够诗性，使用预制诗句')
           text = this.getPresetPoem(context.clickedPoems)

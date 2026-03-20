@@ -231,9 +231,10 @@ async function* streamAnthropic(
  */
 export function generatePoemPrompt(context: {
   clickedPoems: string[]
+  avoidPoems?: string[]
   theme?: string
 }): string {
-  const { clickedPoems, theme } = context
+  const { clickedPoems, avoidPoems = [], theme } = context
   const preferenceContext = buildPreferenceContext(clickedPoems)
 
   let prompt = '请写一副新的中文短联，用于漂浮在“诗云”中。\n'
@@ -246,6 +247,13 @@ export function generatePoemPrompt(context: {
     prompt += `- 以下是用户截至当前双击确认的全部诗句，请作为同一人的累计偏好整体吸收，而不是只参考其中一句：\n${preferenceContext.allPoems}\n`
     prompt += `- 从这些累计选择中提炼出的稳定意象/语感：${preferenceContext.motifs}\n`
     prompt += '- 新句子必须延续这些累计偏好，让人能感觉到系统正被用户持续塑形\n'
+  }
+
+  if (avoidPoems.length > 0) {
+    prompt += `- 不要重复或轻微改写以下已经出现过的句子：\n${avoidPoems
+      .slice(0, 12)
+      .map((poem, index) => `${index + 1}. ${poem}`)
+      .join('\n')}\n`
   }
 
   prompt += '- 必须写成上下两句，缺一不可，两句都要短，单句长度 4 到 10 个汉字\n'
