@@ -1,0 +1,33 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="256" height="256" rx="64" fill="#040915"/>
+  <circle cx="128" cy="128" r="112" fill="url(#bgGlow)" opacity="0.9"/>
+  <circle cx="128" cy="132" r="30" fill="url(#coreGlow)"/>
+  <circle cx="128" cy="132" r="16" fill="#F8E6B4"/>
+  <ellipse cx="128" cy="132" rx="68" ry="26" transform="rotate(-14 128 132)" stroke="url(#orbitLine)" stroke-width="10"/>
+  <ellipse cx="128" cy="132" rx="48" ry="18" transform="rotate(18 128 132)" stroke="url(#orbitLineSoft)" stroke-width="6" opacity="0.75"/>
+  <circle cx="176" cy="108" r="8" fill="#FFF4D6"/>
+  <circle cx="82" cy="82" r="5" fill="#A9D5FF" opacity="0.9"/>
+  <circle cx="188" cy="166" r="4" fill="#A9D5FF" opacity="0.72"/>
+  <defs>
+    <radialGradient id="bgGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(128 128) rotate(90) scale(112)">
+      <stop stop-color="#122B57"/>
+      <stop offset="0.55" stop-color="#091225"/>
+      <stop offset="1" stop-color="#040915"/>
+    </radialGradient>
+    <radialGradient id="coreGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(128 132) rotate(90) scale(30)">
+      <stop stop-color="#FFF4D3"/>
+      <stop offset="0.45" stop-color="#B9DEFF"/>
+      <stop offset="1" stop-color="#5D8CFF" stop-opacity="0.1"/>
+    </radialGradient>
+    <linearGradient id="orbitLine" x1="60" y1="132" x2="196" y2="132" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8FC7FF"/>
+      <stop offset="0.5" stop-color="#FFF0C5"/>
+      <stop offset="1" stop-color="#8FC7FF"/>
+    </linearGradient>
+    <linearGradient id="orbitLineSoft" x1="80" y1="132" x2="176" y2="132" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6F9CFF" stop-opacity="0.25"/>
+      <stop offset="0.5" stop-color="#D7ECFF"/>
+      <stop offset="1" stop-color="#6F9CFF" stop-opacity="0.25"/>
+    </linearGradient>
+  </defs>
+</svg>
