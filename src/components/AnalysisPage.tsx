@@ -3,6 +3,10 @@ import { useGameStore } from '../stores/gameStore'
 import { streamLLM, generateInsightPrompt, generateInsightSystemPrompt } from '../lib/llm'
 import { CosmicBackdrop } from './CosmicBackdrop'
 
+function formatDisplayedPoem(text: string): string {
+  return text.replace(/\s*\n+\s*/g, '　　').trim()
+}
+
 export function AnalysisPage() {
   const {
     llmConfig,
@@ -242,10 +246,10 @@ export function AnalysisPage() {
                         color: 'rgba(255, 255, 255, 0.9)',
                         fontSize: '15px',
                         lineHeight: 1.8,
-                        whiteSpace: 'pre-wrap',
+                        whiteSpace: 'normal',
                       }}
                     >
-                      {poem}
+                      {formatDisplayedPoem(poem)}
                     </div>
                   </div>
                 ))}

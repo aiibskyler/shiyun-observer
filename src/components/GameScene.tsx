@@ -67,6 +67,10 @@ type PoemExplosion = {
   duration: number
 }
 
+function formatDisplayedPoem(text: string): string {
+  return text.replace(/\s*\n+\s*/g, '　　').trim()
+}
+
 const STAR_VERTEX_SHADER = `
 attribute float aSize;
 attribute float aAlpha;
@@ -1029,7 +1033,7 @@ export function GameScene() {
             whiteSpace: 'pre-wrap',
           }}
         >
-          {hoveredPoemText}
+          {formatDisplayedPoem(hoveredPoemText)}
         </div>
       )}
 
