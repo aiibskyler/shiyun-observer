@@ -50,7 +50,7 @@ interface GameStore {
 
 const INITIAL_CONFIG = {
   maxPoems: 96,
-  poemLifetime: 22000, // 22秒，和生成器寿命保持一致
+  poemLifetime: 30000, // 30秒，和生成器寿命保持一致
   totalSteps: 100, // 总共生成100句诗
 }
 

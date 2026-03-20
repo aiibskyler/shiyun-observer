@@ -1,4 +1,5 @@
 import { promises as fs } from 'node:fs'
+import { spawn } from 'node:child_process'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -20,8 +21,42 @@ const SOURCE_DIRECTORIES = [
 ]
 
 const SOURCE_ROOT = path.join(projectRoot, 'chinese-poetry')
+const SOURCE_REPO = 'https://github.com/chinese-poetry/chinese-poetry'
 const OUTPUT_FILE = path.join(projectRoot, 'src', 'lib', 'generatedClassicalPoems.ts')
 const MAX_LINES = 1800
+
+async function runCommand(command, args, options = {}) {
+  await new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      stdio: 'inherit',
+      shell: false,
+      ...options,
+    })
+
+    child.on('error', reject)
+    child.on('close', code => {
+      if (code === 0) {
+        resolve()
+        return
+      }
+
+      reject(new Error(`${command} ${args.join(' ')} exited with code ${code}`))
+    })
+  })
+}
+
+async function ensureSourceRoot() {
+  try {
+    await fs.access(SOURCE_ROOT)
+    return
+  } catch {
+    console.log(`[build-classical-poems] missing chinese-poetry, cloning from ${SOURCE_REPO}`)
+  }
+
+  await runCommand('git', ['clone', SOURCE_REPO, SOURCE_ROOT], {
+    cwd: projectRoot,
+  })
+}
 
 function normalizeLine(line) {
   return line
@@ -122,6 +157,8 @@ async function walkJsonFiles(directory) {
 }
 
 async function main() {
+  await ensureSourceRoot()
+
   const collectedLines = new Set()
 
   for (const relativeDir of SOURCE_DIRECTORIES) {

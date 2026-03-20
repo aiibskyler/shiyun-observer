@@ -8,7 +8,7 @@ import { getPresetPoem, shouldUseLLM } from './presetContent'
  */
 const CONFIG = {
   spawnInterval: 5000, // 每5秒生成一句（降低频率）
-  displayDuration: 22000, // 显示22秒，给阅读留出更从容的时间
+  displayDuration: 30000, // 显示30秒，给阅读留出更从容的时间
   fadeDuration: 3000, // 淡出3秒
 }
 
