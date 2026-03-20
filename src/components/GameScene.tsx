@@ -68,7 +68,7 @@ type PoemExplosion = {
 }
 
 function formatDisplayedPoem(text: string): string {
-  return text.replace(/\s*\n+\s*/g, '　　').trim()
+  return text.replace(/\s*\n+\s*/g, '，').trim()
 }
 
 const STAR_VERTEX_SHADER = `

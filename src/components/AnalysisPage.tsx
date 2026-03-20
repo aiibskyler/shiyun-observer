@@ -4,7 +4,7 @@ import { streamLLM, generateInsightPrompt, generateInsightSystemPrompt } from '.
 import { CosmicBackdrop } from './CosmicBackdrop'
 
 function formatDisplayedPoem(text: string): string {
-  return text.replace(/\s*\n+\s*/g, '　　').trim()
+  return text.replace(/\s*\n+\s*/g, '，').trim()
 }
 
 export function AnalysisPage() {
