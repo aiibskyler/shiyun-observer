@@ -60,24 +60,30 @@ async function* streamOpenAI(
   }, 10000)
 
   try {
+    const requestBody: Record<string, any> = {
+      model,
+      messages: [
+        ...(request.systemPrompt
+          ? [{ role: 'system', content: request.systemPrompt }]
+          : []),
+        { role: 'user', content: request.prompt },
+      ],
+      temperature: request.temperature || 0.8,
+      stream: true,
+    }
+
+    // 只有在明确指定时才添加 max_tokens
+    if (request.maxTokens !== undefined) {
+      requestBody.max_tokens = request.maxTokens
+    }
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
-        model,
-        messages: [
-          ...(request.systemPrompt
-            ? [{ role: 'system', content: request.systemPrompt }]
-            : []),
-          { role: 'user', content: request.prompt },
-        ],
-        max_tokens: request.maxTokens || 500,
-        temperature: request.temperature || 0.8,
-        stream: true,
-      }),
+      body: JSON.stringify(requestBody),
       signal: controller.signal,
     })
 
@@ -170,7 +176,7 @@ async function* streamAnthropic(
       },
       body: JSON.stringify({
         model,
-        max_tokens: request.maxTokens || 500,
+        max_tokens: request.maxTokens || 4096,
         system: request.systemPrompt,
         messages: [{ role: 'user', content: request.prompt }],
         stream: true,
@@ -237,48 +243,39 @@ export function generatePoemPrompt(context: {
   const { clickedPoems, avoidPoems = [], theme } = context
   const preferenceContext = buildPreferenceContext(clickedPoems)
 
-  let prompt = '请写一副新的中文短联，用于漂浮在“诗云”中。\n'
+  let prompt = '写一副两句的中文短联。\n'
 
   if (theme) {
-    prompt += `- 主题：${theme}\n`
+    prompt += `主题：${theme}\n`
   }
 
   if (clickedPoems.length > 0) {
-    prompt += `- 以下是用户截至当前双击确认的全部诗句，请作为同一人的累计偏好整体吸收，而不是只参考其中一句：\n${preferenceContext.allPoems}\n`
-    prompt += `- 从这些累计选择中提炼出的稳定意象/语感：${preferenceContext.motifs}\n`
-    prompt += '- 新句子必须延续这些累计偏好，让人能感觉到系统正被用户持续塑形\n'
+    prompt += `参考风格：\n${preferenceContext.allPoems}\n`
+    prompt += `核心意象：${preferenceContext.motifs}\n`
   }
 
   if (avoidPoems.length > 0) {
-    prompt += `- 不要重复或轻微改写以下已经出现过的句子：\n${avoidPoems
-      .slice(0, 12)
-      .map((poem, index) => `${index + 1}. ${poem}`)
-      .join('\n')}\n`
+    prompt += `避免重复：\n${avoidPoems.slice(0, 8).join('、')}\n`
   }
 
-  prompt += '- 必须写成上下两句，缺一不可，两句都要短，单句长度 4 到 10 个汉字\n'
-  prompt += '- 只输出诗句本身，两句之间必须用换行分隔；不要解释、标题、引号、序号或额外说明\n'
-  prompt += '- 语言要含蓄、具象、冷静，像被雾和月光包住的句子\n'
-  prompt += '- 避免鸡汤、口号、说理、社交媒体文案感\n'
-  prompt += '- 不要重复示例原句，只借鉴气质\n'
-  prompt += '可参考的气质示例：风穿过无声边界、月光停在旧湖面、雾在远处慢慢合拢。\n'
-  prompt += '现在只输出上下两句本身。'
+  prompt += '\n要求：两句、每句4-8字、冷静含蓄、具象意象。只输出诗句。'
 
   return prompt
 }
 
 export function generatePoemSystemPrompt(): string {
   return [
-    '你是“诗云”的写作引擎，只负责输出一副两句组成的中文短联。',
-    '你写的是漂浮在宇宙界面中的诗性碎片，不是解释，也不是文案。',
-    '必须遵守：',
-    '1. 只输出上下两句诗句本身，不输出任何说明；如果只写一句就算失败。',
-    '2. 使用中文，每句 4 到 10 个汉字，两句之间必须用换行分隔。',
-    '3. 两句之间要有呼应感、映照感或轻微对仗感，但不要写成匠气楹联。',
-    '4. 风格冷静、克制、带有意象和留白。',
-    '5. 禁止出现“这句诗”“用户”“喜欢”“生成”“解释”等元话语。',
-    '6. 避免鸡汤、励志、哲理总结、网络流行语。',
-    '7. 如果提供了多句历史偏好，必须把它们视为累计审美轨迹，而不是只响应最近一次选择。',
+    '你是”诗云”写作引擎，生成两句中文短联。',
+    '',
+    '格式要求：',
+    '• 只输出两句诗句，用换行分隔',
+    '• 每句4-8个汉字',
+    '• 不输出任何其他文字',
+    '',
+    '风格要求：',
+    '• 冷静、含蓄、留白',
+    '• 用具象意象表达',
+    '• 避免说教、鸡汤、网络语',
   ].join('\n')
 }
 
