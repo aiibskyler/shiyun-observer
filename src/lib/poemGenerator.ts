@@ -1,42 +1,36 @@
-import type { GamePoemNode } from '../types/game'
-import type { LLMConfig } from '../types/game'
-import { streamLLM, generatePoemPrompt, generatePoemSystemPrompt } from './llm'
+import type { GamePoemNode, LLMConfig } from '../types/game'
+import { streamLLM } from './llm'
 import { getPresetPoem, shouldUseLLM } from './presetContent'
 
-/**
- * è¯—å¥ç”Ÿæˆå™¨é…ç½®
- */
 const CONFIG = {
-  spawnInterval: 5000, // æ¯5ç§’ç”Ÿæˆä¸€å¥ï¼ˆé™ä½é¢‘ç‡ï¼‰
-  displayDuration: 30000, // æ˜¾ç¤º30ç§’ï¼Œç»™é˜…è¯»ç•™å‡ºæ›´ä»å®¹çš„æ—¶é—´
-  fadeDuration: 3000, // æ·¡å‡º3ç§’
+  spawnInterval: 5000,
+  displayDuration: 30000,
+  fadeDuration: 3000,
 }
 
-// é¢„åˆ¶å†…å®¹è®¡æ•°å™¨
 let presetCount = 0
-
-// LLMå¤±è´¥è¿½è¸ª
 let llmFailureCount = 0
 let lastLLMFailureTime = 0
-const FAILURE_COOLDOWN = 30000 // å¤±è´¥å30ç§’å†…é™ä½LLMä½¿ç”¨é¢‘ç‡
+const FAILURE_COOLDOWN = 30000
 let lastLLMRequestTime = 0
-const REQUEST_COOLDOWN = 12000 // ä¸­é«˜é¢‘æ¨¡å¼ä¸‹é™åˆ¶ LLM çš„æœ€å°è¯·æ±‚é—´éš”
+const REQUEST_COOLDOWN = 12000
+const LLM_BATCH_SIZE = 4
 
 function normalizePoemText(text: string): string {
   return text
     .replace(/```[\s\S]*?```/g, '')
-    .replace(/[""'`â€œâ€â€˜â€™ã€Šã€‹ã€ã€‘]/g, '')
-    .replace(/^\s*(è¯—å¥|ç­”æ¡ˆ|è¾“å‡º|æ­£æ–‡)\s*[:ï¼š]\s*/gm, '')
-    .replace(/^\s*(ä¸Šè”|ä¸‹è”|å…¶ä¸€|å…¶äºŒ)\s*[:ï¼š]\s*/gm, '')
-    .replace(/^\s*[-*â€¢\d.]+\s*/gm, '')
+    .replace(/[""'`¡°¡±¡®¡¯¡¶¡·¡¾¡¿]/g, '')
+    .replace(/^\s*(Ê«¾ä|´ğ°¸|Êä³ö|ÕıÎÄ)\s*[:£º]\s*/gm, '')
+    .replace(/^\s*(ÉÏÁª|ÏÂÁª|ÆäÒ»|Æä¶ş)\s*[:£º]\s*/gm, '')
+    .replace(/^\s*[-*?\d.]+\s*/gm, '')
     .replace(/\r/g, '')
     .trim()
 }
 
 function cleanPoemSegment(text: string): string {
   return text
-    .replace(/[ã€‚ï¼ï¼Ÿï¼›;,.!?ã€]+$/g, '')
-    .replace(/[()ï¼ˆï¼‰]/g, '')
+    .replace(/[¡££¡£¿£»;,.!?¡¢]+$/g, '')
+    .replace(/[()£¨£©]/g, '')
     .trim()
 }
 
@@ -48,7 +42,7 @@ function trySplitSingleLineCouplet(text: string): string[] {
   }
 
   const explicitSegments = cleaned
-    .split(/[ï¼Œï¼›ã€,]/)
+    .split(/[£¬£»¡£]/)
     .map(segment => cleanPoemSegment(segment))
     .filter(Boolean)
 
@@ -56,7 +50,7 @@ function trySplitSingleLineCouplet(text: string): string[] {
     return explicitSegments.slice(0, 2)
   }
 
-  const compact = cleaned.replace(/[ï¼Œã€‚ã€ï¼ï¼Ÿï¼›ï¼šÂ·\s]/g, '')
+  const compact = cleaned.replace(/[£¬¡££¡£¿£»¡¢\s]/g, '')
   const length = compact.length
 
   if (length < 8 || length > 20) {
@@ -93,7 +87,7 @@ function splitCoupletCandidates(raw: string): string[] {
   }
 
   const inlineSegments = normalized
-    .split(/[ï¼Œï¼›,]/)
+    .split(/[£¬£»,]/)
     .map(segment => cleanPoemSegment(segment))
     .filter(Boolean)
 
@@ -113,23 +107,23 @@ function isPoeticLine(text: string): boolean {
     return false
   }
 
-  const compact = text.replace(/[ï¼Œã€‚ã€ï¼ï¼Ÿï¼›ï¼šÂ·\s]/g, '')
+  const compact = text.replace(/[£¬¡££¡£¿£»¡¢\s]/g, '')
   const length = compact.length
   const bannedPhrases = [
-    'è¯—å¥',
-    'è§£é‡Š',
-    'ç”¨æˆ·',
-    'ç‚¹å‡»',
-    'ç”Ÿæˆ',
-    'è¾“å‡º',
-    'ç­”æ¡ˆ',
-    'å–œæ¬¢',
-    'æ„ä¹‰æ˜¯',
-    'äººç”Ÿ',
-    'æˆ‘ä»¬è¦',
+    'Ê«¾ä',
+    '½âÊÍ',
+    'ÓÃ»§',
+    'µã»÷',
+    'Éú³É',
+    'Êä³ö',
+    '´ğ°¸',
+    'Ï²»¶',
+    'ÒâÒåÊÇ',
+    'ÈËÉú',
+    'ÎÒÃÇÒª',
   ]
 
-  if (!/^[\u4e00-\u9fa5ï¼Œã€‚ã€ï¼ï¼Ÿï¼›ï¼šÂ·\s]+$/.test(text)) {
+  if (!/^[\u4e00-\u9fa5£¬¡££¡£¿£»¡¢\s]+$/.test(text)) {
     return false
   }
 
@@ -153,7 +147,7 @@ function isPoeticCouplet(lines: string[]): boolean {
     return false
   }
 
-  const lengths = lines.map(line => line.replace(/[ï¼Œã€‚ã€ï¼ï¼Ÿï¼›ï¼šÂ·\s]/g, '').length)
+  const lengths = lines.map(line => line.replace(/[£¬¡££¡£¿£»¡¢\s]/g, '').length)
   return Math.abs(lengths[0] - lengths[1]) <= 2
 }
 
@@ -167,14 +161,68 @@ function extractPoeticCouplet(raw: string): string {
   return ''
 }
 
-/**
- * ç”Ÿæˆéšæœºä½ç½®
- */
-function randomPosition(radius: number = 30): {
-  x: number
-  y: number
-  z: number
-} {
+function generateBatchPoemPrompt(context: {
+  clickedPoems: string[]
+  avoidPoems?: string[]
+  batchSize: number
+}): string {
+  const sections = [
+    `ÇëÒ»´ÎÉú³É ${context.batchSize} ×éÖĞÎÄ¶ÌÁª¡£`,
+    'Ã¿×é±ØĞëÑÏ¸ñÊä³öÎªÒ»ĞĞ£ºµÚN×é|ÉÏ¾ä|ÏÂ¾ä',
+    '³ı½á¹ûĞĞÖ®Íâ£¬²»ÒªÊä³öÈÎºÎËµÃ÷¡¢±êÌâ¡¢½âÊÍ»ò markdown¡£',
+    'Ã¿¾ä 4-8 ¸öºº×Ö£¬·ç¸ñÀä¾²¡¢º¬Ğî¡¢¾ßÏó¡£',
+  ]
+
+  if (context.clickedPoems.length > 0) {
+    sections.push('²Î¿¼ÓÃ»§Æ«ºÃ£º')
+    sections.push(context.clickedPoems.join('\n'))
+  }
+
+  if (context.avoidPoems && context.avoidPoems.length > 0) {
+    sections.push('±ÜÃâÖØ¸´£º')
+    sections.push(context.avoidPoems.slice(0, 12).join('\n'))
+  }
+
+  return sections.join('\n')
+}
+
+function generateBatchPoemSystemPrompt(): string {
+  return [
+    'ÄãÊÇ¡°Ê«ÔÆ¡±Ğ´×÷ÒıÇæ¡£',
+    'µ±ÓÃ»§ÒªÇó¶à×é¶ÌÁªÊ±£¬±ØĞëÑÏ¸ñÖğĞĞÊä³ö£ºµÚN×é|ÉÏ¾ä|ÏÂ¾ä',
+    '²»ÒªÊä³öÈÎºÎ¶îÍâÎÄ±¾¡£',
+    'ÉÏÏÂ¾ä¶¼±ØĞëÊÇ×ÔÈ»µÄÖĞÎÄÊ«ĞÔ¶Ì¾ä£¬Ã¿¾ä 4-8 ¸öºº×Ö¡£',
+  ].join('\n')
+}
+
+function extractBatchPoeticCouplets(raw: string): string[] {
+  const normalized = normalizePoemText(raw)
+  const lines = normalized
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean)
+
+  const poems: string[] = []
+
+  for (const line of lines) {
+    const match = line.match(/^µÚ?\s*\d+\s*×é?\s*[|£ü](.+?)[|£ü](.+)$/)
+    if (!match) {
+      continue
+    }
+
+    const left = cleanPoemSegment(match[1])
+    const right = cleanPoemSegment(match[2])
+    const poem = extractPoeticCouplet(`${left}\n${right}`)
+
+    if (poem) {
+      poems.push(poem)
+    }
+  }
+
+  return poems
+}
+
+function randomPosition(radius: number = 30): { x: number; y: number; z: number } {
   const theta = Math.random() * Math.PI * 2
   const phi = Math.random() * Math.PI
   const r = Math.cbrt(Math.random()) * radius
@@ -186,33 +234,84 @@ function randomPosition(radius: number = 30): {
   }
 }
 
-/**
- * ç”Ÿæˆéšæœºé¢œè‰²
- */
 function randomColor(): { r: number; g: number; b: number } {
   const colors = [
-    { r: 147, g: 197, b: 253 }, // æµ…è“
-    { r: 196, g: 181, b: 253 }, // æµ…ç´«
-    { r: 251, g: 191, b: 213 }, // ç²‰çº¢
-    { r: 167, g: 243, b: 208 }, // è–„è·ç»¿
-    { r: 253, g: 224, b: 71 }, // æ·¡é»„
+    { r: 147, g: 197, b: 253 },
+    { r: 196, g: 181, b: 253 },
+    { r: 251, g: 191, b: 213 },
+    { r: 167, g: 243, b: 208 },
+    { r: 253, g: 224, b: 71 },
   ]
   return colors[Math.floor(Math.random() * colors.length)]
 }
 
-/**
- * è¯—å¥ç”Ÿæˆå™¨
- */
 export class PoemGenerator {
   private llmConfig: LLMConfig
+  private llmBatchBuffer: string[] = []
+  private llmBatchPromise: Promise<void> | null = null
 
   constructor(llmConfig: LLMConfig) {
     this.llmConfig = llmConfig
   }
 
-  /**
-   * ç”Ÿæˆå•ä¸ªè¯—å¥
-   */
+  private async requestLLMBatch(context: {
+    clickedPoems: string[]
+    avoidPoems: string[]
+  }): Promise<void> {
+    if (!this.llmBatchPromise) {
+      this.llmBatchPromise = (async () => {
+        let responseText = ''
+        const prompt = generateBatchPoemPrompt({
+          clickedPoems: context.clickedPoems,
+          avoidPoems: context.avoidPoems,
+          batchSize: LLM_BATCH_SIZE,
+        })
+
+        for await (const chunk of streamLLM(this.llmConfig, {
+          prompt,
+          systemPrompt: generateBatchPoemSystemPrompt(),
+          maxTokens: 8192,
+          temperature: 0.95,
+        })) {
+          responseText += chunk
+        }
+
+        const poems = extractBatchPoeticCouplets(responseText)
+        if (poems.length === 0) {
+          throw new Error('LLM batch response did not contain any valid poem lines')
+        }
+
+        this.llmBatchBuffer.push(...poems)
+      })().finally(() => {
+        this.llmBatchPromise = null
+      })
+    }
+
+    await this.llmBatchPromise
+  }
+
+  private async getLLMPoemFromBatch(context: {
+    clickedPoems: string[]
+    avoidPoems: string[]
+  }): Promise<string> {
+    const avoidSet = new Set(context.avoidPoems.map(poem => poem.trim()).filter(Boolean))
+
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      if (this.llmBatchBuffer.length === 0) {
+        await this.requestLLMBatch(context)
+      }
+
+      while (this.llmBatchBuffer.length > 0) {
+        const poem = this.llmBatchBuffer.shift() || ''
+        if (poem && !avoidSet.has(poem)) {
+          return poem
+        }
+      }
+    }
+
+    throw new Error('No unique poem available from LLM batch')
+  }
+
   async generatePoem(context: {
     clickedPoems: string[]
     avoidPoems?: string[]
@@ -224,15 +323,10 @@ export class PoemGenerator {
     const forcePreset = context.forcePreset === true
     const avoidPoems = new Set((context.avoidPoems || []).map(poem => poem.trim()).filter(Boolean))
     const avoidPoemList = [...avoidPoems]
-
-    // å…ˆå‡†å¤‡é™çº§è¯æ±‡ï¼ˆæ°›å›´è¯ï¼‰
-    // æ£€æŸ¥æ˜¯å¦åœ¨LLMå¤±è´¥å†·å´æœŸ
     const isInCooldown = now - lastLLMFailureTime < FAILURE_COOLDOWN
     const isInRequestCooldown = now - lastLLMRequestTime < REQUEST_COOLDOWN
 
-    // å†³å®šæ˜¯å¦ä½¿ç”¨ LLM
-    // å¦‚æœåœ¨å†·å´æœŸï¼Œç›´æ¥ä½¿ç”¨é™çº§è¯æ±‡ï¼Œä¸è¯·æ±‚LLM
-    let useLLM =
+    const useLLM =
       !forcePreset &&
       !isInCooldown &&
       !isInRequestCooldown &&
@@ -242,46 +336,29 @@ export class PoemGenerator {
     let source: GamePoemNode['source'] = 'template'
 
     if (useLLM) {
-      // å°è¯•ä½¿ç”¨ LLM ç”Ÿæˆï¼ŒåŒæ—¶å·²ç»æœ‰é™çº§è¯æ±‡ä½œä¸ºåå¤‡
       try {
         lastLLMRequestTime = now
-        const prompt = generatePoemPrompt({
+        text = await this.getLLMPoemFromBatch({
           clickedPoems: context.clickedPoems,
-          avoidPoems: [...avoidPoems],
+          avoidPoems: avoidPoemList,
         })
 
-        for await (const chunk of streamLLM(this.llmConfig, {
-          prompt,
-          systemPrompt: generatePoemSystemPrompt(),
-          // ç»™ reasoning æ¨¡å‹è¶³å¤Ÿ completion é¢åº¦ï¼Œé¿å… content æ²¡æœºä¼šè¾“å‡º
-          maxTokens: 8192,
-          temperature: 0.95,
-        })) {
-          text += chunk
-        }
-
-        text = extractPoeticCouplet(text)
-
-        if (text) {
-          if (avoidPoems.has(text)) {
-            console.warn('[PoemGenerator] LLMç”Ÿæˆç»“æœä¸ç°æœ‰è¯—å¥é‡å¤ï¼Œæ”¹ç”¨é¢„åˆ¶è¯—å¥')
-            text = this.getPresetPoem(context.clickedPoems, true, avoidPoemList)
-            source = 'template'
-          } else {
-            source = 'llm'
-            console.log('[PoemGenerator] LLMç”ŸæˆæˆåŠŸ:', text)
-            llmFailureCount = 0
-          }
+        if (text && !avoidPoems.has(text)) {
+          source = 'llm'
+          llmFailureCount = 0
+          console.log('[PoemGenerator] LLM batch generated poem:', text)
         } else {
-          console.warn('[PoemGenerator] LLMè¿”å›å†…å®¹ä¸å¤Ÿè¯—æ€§ï¼Œä½¿ç”¨é¢„åˆ¶è¯—å¥')
-          text = this.getPresetPoem(context.clickedPoems, false, avoidPoemList)
+          text = this.getPresetPoem(context.clickedPoems, true, avoidPoemList)
           source = 'template'
         }
       } catch (error) {
         llmFailureCount++
         lastLLMFailureTime = now
         const errorMessage = error instanceof Error ? error.message : String(error)
-        console.warn(`[PoemGenerator] LLMè¯·æ±‚å¤±è´¥ï¼ˆç¬¬${llmFailureCount}æ¬¡ï¼‰ï¼Œä½¿ç”¨é™çº§è¯æ±‡:`, errorMessage)
+        console.warn(
+          `[PoemGenerator] LLM batch request failed (${llmFailureCount}), fallback to preset:`,
+          errorMessage
+        )
         text = this.getPresetPoem(context.clickedPoems, true, avoidPoemList)
         source = 'template'
       }
@@ -290,17 +367,16 @@ export class PoemGenerator {
       source = 'template'
       presetCount++
 
-      // å¦‚æœæ˜¯å› ä¸ºå†·å´æœŸï¼Œå¢åŠ presetCountä»¥æ›´å¿«æ¢å¤
       if (isInCooldown) {
         presetCount++
       }
     }
 
-    const poem = {
+    return {
       id: Math.random().toString(36).substring(2, 9),
       text,
       position: randomPosition(),
-      lifecycle: 'spawning' as const,
+      lifecycle: 'spawning',
       spawnTime: now,
       fadeTime: now + CONFIG.displayDuration,
       clicked: false,
@@ -310,15 +386,8 @@ export class PoemGenerator {
       opacity: 0,
       color: randomColor(),
     }
-
-    return poem
   }
 
-  /**
-   * ç”Ÿæˆé¢„åˆ¶è¯—å¥
-   * @param clickedPoems ç”¨æˆ·å·²ç‚¹å‡»è¯—å¥
-   * @param forceMood æ˜¯å¦å¼ºåˆ¶ä½¿ç”¨æ›´ç¨³å®šçš„æ°›å›´å¥
-   */
   private getPresetPoem(
     clickedPoems: string[] = [],
     forceMood: boolean = false,
@@ -328,9 +397,6 @@ export class PoemGenerator {
   }
 }
 
-/**
- * åˆ›å»ºè¯—å¥ç”Ÿæˆå™¨å®ä¾‹
- */
 export function createPoemGenerator(llmConfig: LLMConfig): PoemGenerator {
   return new PoemGenerator(llmConfig)
 }
