@@ -204,11 +204,11 @@ export function GameUI() {
       <div
         style={{
           position: 'fixed',
-          top: isMobile ? 'max(66px, calc(env(safe-area-inset-top) + 66px))' : '86px',
+          top: isMobile ? 'max(104px, calc(env(safe-area-inset-top) + 104px))' : '86px',
           left: '50%',
           transform: 'translateX(-50%)',
           width: isMobile ? 'calc(100vw - 24px)' : 'min(560px, calc(100vw - 48px))',
-          zIndex: 19,
+          zIndex: isMobile ? 21 : 19,
           pointerEvents: 'none',
         }}
       >
