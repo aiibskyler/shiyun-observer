@@ -1,5 +1,14 @@
 ﻿import { useEffect, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { useGameStore } from '../stores/gameStore'
+
+type ProgressBurst = {
+  id: number
+  x: number
+  y: number
+  targetX: number
+  targetY: number
+}
 
 function pickStatusMessage(messages: string[], seed: number): string {
   return messages[Math.abs(seed) % messages.length]
@@ -89,6 +98,7 @@ function getDriftProgress(totalPoems: number, clickedCount: number): number {
 export function GameUI() {
   const { poems, likedPoems, currentStep, totalSteps, endGame, reset } = useGameStore()
   const [isMobile, setIsMobile] = useState(false)
+  const [progressBursts, setProgressBursts] = useState<ProgressBurst[]>([])
 
   useEffect(() => {
     const media = window.matchMedia('(max-width: 768px)')
@@ -107,6 +117,27 @@ export function GameUI() {
     return () => media.removeListener(handleChange)
   }, [])
 
+  useEffect(() => {
+    const handleMeaningTransfer = (event: Event) => {
+      const customEvent = event as CustomEvent<{ x: number; y: number }>
+      const burst = {
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        x: customEvent.detail.x,
+        y: customEvent.detail.y,
+        targetX: window.innerWidth / 2,
+        targetY: isMobile ? 46 : 90,
+      }
+
+      setProgressBursts(current => [...current, burst])
+      window.setTimeout(() => {
+        setProgressBursts(current => current.filter(item => item.id !== burst.id))
+      }, 950)
+    }
+
+    window.addEventListener('meaning-transfer', handleMeaningTransfer)
+    return () => window.removeEventListener('meaning-transfer', handleMeaningTransfer)
+  }, [isMobile])
+
   const generationProgress = totalSteps > 0 ? (currentStep / totalSteps) * 100 : 0
   const totalPoems = currentStep
   const clickedCount = likedPoems.length
@@ -117,6 +148,29 @@ export function GameUI() {
 
   return (
     <>
+      {progressBursts.map(burst => (
+        <div
+          key={burst.id}
+          style={{
+            position: 'fixed',
+            left: `${burst.x}px`,
+            top: `${burst.y}px`,
+            width: '14px',
+            height: '14px',
+            borderRadius: '999px',
+            zIndex: 26,
+            pointerEvents: 'none',
+            background:
+              'radial-gradient(circle, rgba(255, 244, 186, 1) 0%, rgba(150, 212, 255, 0.92) 52%, rgba(150, 212, 255, 0) 100%)',
+            boxShadow: '0 0 22px rgba(162, 214, 255, 0.95)',
+            transform: 'translate(-50%, -50%)',
+            animation: 'meaningTransfer 900ms cubic-bezier(0.22, 1, 0.36, 1) forwards',
+            ['--travel-x' as string]: `${burst.targetX - burst.x}px`,
+            ['--travel-y' as string]: `${burst.targetY - burst.y}px`,
+          } as CSSProperties}
+        />
+      ))}
+
       <div
         style={{
           position: 'fixed',
@@ -394,6 +448,25 @@ export function GameUI() {
           诗意来处：LLM {llmCount} · 诗库回响 {presetCount} · 生成进度 {Math.round(generationProgress)}%
         </div>
       </div>
+
+      <style>{`
+        @keyframes meaningTransfer {
+          0% {
+            transform: translate(-50%, -50%) scale(0.7);
+            opacity: 0;
+          }
+          18% {
+            opacity: 1;
+          }
+          78% {
+            opacity: 1;
+          }
+          100% {
+            transform: translate(calc(-50% + var(--travel-x)), calc(-50% + var(--travel-y))) scale(0.18);
+            opacity: 0;
+          }
+        }
+      `}</style>
     </>
   )
 }

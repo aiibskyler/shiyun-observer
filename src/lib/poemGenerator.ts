@@ -278,6 +278,17 @@ export class PoemGenerator {
     this.llmConfig = llmConfig
   }
 
+  async warmupLLMBatch(context: {
+    clickedPoems?: string[]
+    avoidPoems?: string[]
+  } = {}): Promise<void> {
+    console.log('[PoemGenerator] Starting initial LLM warmup')
+    await this.requestLLMBatch({
+      clickedPoems: context.clickedPoems || [],
+      avoidPoems: context.avoidPoems || [],
+    })
+  }
+
   private async fetchSingleLLMBatch(context: {
     clickedPoems: string[]
     avoidPoems: string[]
@@ -312,6 +323,9 @@ export class PoemGenerator {
   }): Promise<void> {
     if (!this.llmBatchPromise) {
       this.llmBatchPromise = (async () => {
+        console.log(
+          `[PoemGenerator] Requesting ${LLM_BATCH_CONCURRENCY} concurrent LLM batches x ${LLM_BATCH_SIZE} poems`
+        )
         const poemGroups = await Promise.all(
           Array.from({ length: LLM_BATCH_CONCURRENCY }, () =>
             this.fetchSingleLLMBatch(context)

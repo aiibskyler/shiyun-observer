@@ -67,6 +67,11 @@ type PoemExplosion = {
   duration: number
 }
 
+type MeaningTransferDetail = {
+  x: number
+  y: number
+}
+
 function formatDisplayedPoem(text: string): string {
   return text.replace(/\s*\n+\s*/g, '\uFF0C').trim()
 }
@@ -407,6 +412,18 @@ function updatePoemExplosions(explosions: PoemExplosion[], scene: THREE.Scene, n
   }
 }
 
+function getScreenPosition(
+  object: THREE.Object3D,
+  camera: THREE.PerspectiveCamera
+): MeaningTransferDetail {
+  const projected = object.position.clone().project(camera)
+
+  return {
+    x: ((projected.x + 1) / 2) * window.innerWidth,
+    y: ((-projected.y + 1) / 2) * window.innerHeight,
+  }
+}
+
 export function GameScene() {
   const containerRef = useRef<HTMLDivElement>(null)
   const sceneRef = useRef<THREE.Scene | null>(null)
@@ -506,6 +523,45 @@ export function GameScene() {
     }
 
     return null
+  }
+
+  const removePoemWithExplosion = (
+    poemId: string,
+    scene: THREE.Scene,
+    camera: THREE.PerspectiveCamera
+  ) => {
+    const group = poemMeshesRef.current.get(poemId)
+    if (!group) {
+      return
+    }
+
+    const userData = group.userData as PoemGroupUserData
+    const now = Date.now()
+    const screenPosition = getScreenPosition(group, camera)
+    const explosion = createPoemExplosion(
+      group.position.clone(),
+      userData.baseColor.clone(),
+      now
+    )
+
+    poemExplosionsRef.current.push(explosion)
+    scene.add(explosion.group)
+    scene.remove(group)
+    poemMeshesRef.current.delete(poemId)
+    clickBurstsRef.current.delete(poemId)
+    removePoem(poemId)
+
+    if (hoveredPoemIdRef.current === poemId) {
+      hoveredPoemIdRef.current = null
+      setHoveredPoemText(null)
+      document.body.style.cursor = 'default'
+    }
+
+    window.dispatchEvent(
+      new CustomEvent<MeaningTransferDetail>('meaning-transfer', {
+        detail: screenPosition,
+      })
+    )
   }
 
   const createPoemMesh = (poem: GamePoemNode): THREE.Group => {
@@ -960,7 +1016,12 @@ export function GameScene() {
     scene.add(createNebula(new THREE.Vector3(40, -22, -42), 0xf2d59d, 22))
 
     poemGeneratorRef.current = createPoemGenerator(llmConfig)
-    void trySpawnBatch(14, 12)
+    void poemGeneratorRef.current
+      .warmupLLMBatch()
+      .catch(error => {
+        console.warn('[GameScene] Initial LLM warmup failed:', error)
+      })
+    void trySpawnBatch(14, 6)
 
     const animate = () => {
       animationFrameRef.current = requestAnimationFrame(animate)
@@ -1036,6 +1097,7 @@ export function GameScene() {
       clickPoem(poem.id)
       clickBurstsRef.current.set(poem.id, Date.now())
       triggerClickFeedback(poem.text)
+      removePoemWithExplosion(poem.id, scene, camera)
     }
 
     const handleResize = () => {
