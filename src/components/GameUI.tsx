@@ -12,10 +12,6 @@ type ProgressBurst = {
   targetY: number
 }
 
-function pickStatusMessage(messages: string[], seed: number): string {
-  return messages[Math.abs(seed) % messages.length]
-}
-
 function getStatusMessages(totalPoems: number, clickedCount: number, llmCount: number): string[] {
   if (clickedCount === 0) {
     return [
@@ -133,7 +129,6 @@ export function GameUI() {
 
     return () => window.clearInterval(timer)
   }, [])
-
 
   const generationProgress = totalSteps > 0 ? (currentStep / totalSteps) * 100 : 0
   const totalPoems = currentStep
