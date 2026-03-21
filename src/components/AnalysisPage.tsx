@@ -23,6 +23,24 @@ export function AnalysisPage() {
   const [error, setError] = useState<string | null>(null)
   const [retryNonce, setRetryNonce] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 768px)')
+    const handleChange = (event: MediaQueryListEvent) => {
+      setIsMobile(event.matches)
+    }
+
+    setIsMobile(media.matches)
+
+    if (typeof media.addEventListener === 'function') {
+      media.addEventListener('change', handleChange)
+      return () => media.removeEventListener('change', handleChange)
+    }
+
+    media.addListener(handleChange)
+    return () => media.removeListener(handleChange)
+  }, [])
 
   useEffect(() => {
     let mounted = true
@@ -99,14 +117,18 @@ export function AnalysisPage() {
         left: 0,
         right: 0,
         bottom: 0,
+        minHeight: '100dvh',
         background: 'linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%)',
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         justifyContent: 'center',
-        padding: '20px',
+        padding:
+          'max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom))',
         fontFamily: 'sans-serif',
         zIndex: 1000,
-        overflow: 'hidden',
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        WebkitOverflowScrolling: 'touch',
       }}
     >
       <CosmicBackdrop variant="analysis" />
@@ -114,12 +136,13 @@ export function AnalysisPage() {
         style={{
           maxWidth: '1120px',
           width: '100%',
-          maxHeight: '80vh',
-          overflow: 'auto',
+          margin: 'auto 0',
+          maxHeight: isMobile ? 'none' : '80vh',
+          overflow: isMobile ? 'visible' : 'auto',
           background: 'rgba(20, 20, 35, 0.95)',
           backdropFilter: 'blur(20px)',
-          borderRadius: '24px',
-          padding: '48px',
+          borderRadius: isMobile ? '16px' : '24px',
+          padding: isMobile ? '20px 16px' : '48px',
           border: '1px solid rgba(255, 255, 255, 0.1)',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
           position: 'relative',
@@ -131,7 +154,7 @@ export function AnalysisPage() {
           <h2
             style={{
               color: 'white',
-              fontSize: '32px',
+              fontSize: isMobile ? '24px' : '32px',
               fontWeight: 'bold',
               margin: '0 0 12px 0',
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -155,8 +178,8 @@ export function AnalysisPage() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-            gap: '28px',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(320px, 1fr))',
+            gap: isMobile ? '16px' : '28px',
             alignItems: 'start',
           }}
         >
@@ -213,8 +236,8 @@ export function AnalysisPage() {
                 style={{
                   display: 'grid',
                   gap: '10px',
-                  maxHeight: '540px',
-                  overflowY: 'auto',
+                  maxHeight: isMobile ? 'none' : '540px',
+                  overflowY: isMobile ? 'visible' : 'auto',
                   paddingRight: '4px',
                 }}
               >

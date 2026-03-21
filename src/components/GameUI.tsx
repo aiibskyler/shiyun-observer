@@ -1,4 +1,5 @@
 import { useGameStore } from '../stores/gameStore'
+import { useEffect, useState } from 'react'
 
 function getStatusMessage(totalPoems: number, clickedCount: number, llmCount: number): string {
   if (clickedCount === 0) {
@@ -38,6 +39,24 @@ function getDriftProgress(totalPoems: number, clickedCount: number): number {
 
 export function GameUI() {
   const { poems, likedPoems, currentStep, totalSteps, endGame, reset } = useGameStore()
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 768px)')
+    const handleChange = (event: MediaQueryListEvent) => {
+      setIsMobile(event.matches)
+    }
+
+    setIsMobile(media.matches)
+
+    if (typeof media.addEventListener === 'function') {
+      media.addEventListener('change', handleChange)
+      return () => media.removeEventListener('change', handleChange)
+    }
+
+    media.addListener(handleChange)
+    return () => media.removeListener(handleChange)
+  }, [])
 
   const generationProgress = totalSteps > 0 ? (currentStep / totalSteps) * 100 : 0
   const totalPoems = currentStep
@@ -67,16 +86,17 @@ export function GameUI() {
       <div
         style={{
           position: 'fixed',
-          top: '22px',
+          top: isMobile ? 'max(10px, env(safe-area-inset-top))' : '22px',
           left: '50%',
           transform: 'translateX(-50%)',
-          width: 'min(1100px, calc(100vw - 40px))',
+          width: isMobile ? 'calc(100vw - 20px)' : 'min(1100px, calc(100vw - 40px))',
           display: 'flex',
-          alignItems: 'center',
+          alignItems: isMobile ? 'stretch' : 'center',
           justifyContent: 'space-between',
-          gap: '18px',
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: isMobile ? '8px' : '18px',
           zIndex: 20,
-          pointerEvents: 'none',
+          pointerEvents: isMobile ? 'auto' : 'none',
         }}
       >
         <div
@@ -84,12 +104,13 @@ export function GameUI() {
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
-            padding: '12px 18px',
+            padding: isMobile ? '10px 14px' : '12px 18px',
             borderRadius: '999px',
             background: 'rgba(7, 12, 28, 0.58)',
             border: '1px solid rgba(255, 255, 255, 0.12)',
             boxShadow: '0 18px 60px rgba(0, 0, 0, 0.28)',
             backdropFilter: 'blur(18px)',
+            alignSelf: isMobile ? 'flex-start' : 'auto',
           }}
         >
           <span
@@ -105,7 +126,7 @@ export function GameUI() {
           <span
             style={{
               color: 'rgba(240, 246, 255, 0.96)',
-              fontSize: '13px',
+              fontSize: isMobile ? '12px' : '13px',
               letterSpacing: '0.12em',
               fontFamily: '"Microsoft YaHei UI", "PingFang SC", sans-serif',
             }}
@@ -118,15 +139,16 @@ export function GameUI() {
           style={{
             flex: 1,
             minWidth: 0,
-            padding: '14px 22px',
+            width: isMobile ? '100%' : 'auto',
+            padding: isMobile ? '11px 14px' : '14px 22px',
             borderRadius: '999px',
             background: 'rgba(7, 12, 28, 0.52)',
             border: '1px solid rgba(255, 255, 255, 0.08)',
             backdropFilter: 'blur(16px)',
             color: 'rgba(224, 233, 246, 0.9)',
-            fontSize: '13px',
+            fontSize: isMobile ? '12px' : '13px',
             textAlign: 'center',
-            letterSpacing: '0.08em',
+            letterSpacing: isMobile ? '0.04em' : '0.08em',
             fontFamily: '"Songti SC", "STSong", serif',
             boxShadow: '0 18px 55px rgba(0, 0, 0, 0.24)',
           }}
@@ -140,17 +162,19 @@ export function GameUI() {
             alignItems: 'center',
             gap: '10px',
             pointerEvents: 'auto',
+            width: isMobile ? '100%' : 'auto',
           }}
         >
           <button
             onClick={reset}
             style={{
-              padding: '12px 18px',
+              flex: isMobile ? 1 : 'none',
+              padding: isMobile ? '10px 14px' : '12px 18px',
               borderRadius: '999px',
               border: '1px solid rgba(255, 255, 255, 0.12)',
               background: 'rgba(8, 14, 31, 0.52)',
               color: 'rgba(225, 233, 246, 0.88)',
-              fontSize: '13px',
+              fontSize: isMobile ? '12px' : '13px',
               cursor: 'pointer',
               backdropFilter: 'blur(14px)',
             }}
@@ -160,12 +184,13 @@ export function GameUI() {
           <button
             onClick={endGame}
             style={{
-              padding: '12px 18px',
+              flex: isMobile ? 1 : 'none',
+              padding: isMobile ? '10px 14px' : '12px 18px',
               borderRadius: '999px',
               border: '1px solid rgba(255, 234, 188, 0.35)',
               background: 'linear-gradient(135deg, rgba(255, 245, 214, 0.18) 0%, rgba(129, 176, 255, 0.18) 100%)',
               color: 'rgba(255, 249, 233, 0.96)',
-              fontSize: '13px',
+              fontSize: isMobile ? '12px' : '13px',
               cursor: 'pointer',
               backdropFilter: 'blur(14px)',
               boxShadow: '0 12px 38px rgba(81, 122, 255, 0.18)',
@@ -179,10 +204,10 @@ export function GameUI() {
       <div
         style={{
           position: 'fixed',
-          top: '86px',
+          top: isMobile ? 'max(116px, calc(env(safe-area-inset-top) + 116px))' : '86px',
           left: '50%',
           transform: 'translateX(-50%)',
-          width: 'min(560px, calc(100vw - 48px))',
+          width: isMobile ? 'calc(100vw - 24px)' : 'min(560px, calc(100vw - 48px))',
           zIndex: 19,
           pointerEvents: 'none',
         }}
@@ -212,11 +237,13 @@ export function GameUI() {
       <div
         style={{
           position: 'fixed',
-          bottom: '26px',
-          left: '26px',
-          width: 'min(360px, calc(100vw - 52px))',
-          padding: '18px 20px',
-          borderRadius: '22px',
+          bottom: isMobile ? 'max(12px, env(safe-area-inset-bottom))' : '26px',
+          left: isMobile ? '50%' : '26px',
+          transform: isMobile ? 'translateX(-50%)' : 'none',
+          width: isMobile ? 'calc(100vw - 24px)' : 'min(360px, calc(100vw - 52px))',
+          maxWidth: isMobile ? '420px' : 'none',
+          padding: isMobile ? '14px' : '18px 20px',
+          borderRadius: isMobile ? '16px' : '22px',
           background: 'rgba(6, 10, 24, 0.52)',
           border: '1px solid rgba(255, 255, 255, 0.1)',
           boxShadow: '0 24px 70px rgba(0, 0, 0, 0.3)',
@@ -228,7 +255,7 @@ export function GameUI() {
       >
         <div
           style={{
-            fontSize: '12px',
+            fontSize: isMobile ? '11px' : '12px',
             letterSpacing: '0.16em',
             textTransform: 'uppercase',
             color: 'rgba(156, 176, 210, 0.8)',
@@ -242,7 +269,7 @@ export function GameUI() {
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-            gap: '10px',
+            gap: isMobile ? '8px' : '10px',
           }}
         >
           {[
@@ -253,15 +280,15 @@ export function GameUI() {
             <div
               key={label}
               style={{
-                padding: '12px 10px',
-                borderRadius: '16px',
+                padding: isMobile ? '10px 8px' : '12px 10px',
+                borderRadius: isMobile ? '12px' : '16px',
                 background: 'rgba(255, 255, 255, 0.04)',
                 border: '1px solid rgba(255, 255, 255, 0.06)',
               }}
             >
               <div
                 style={{
-                  fontSize: '11px',
+                  fontSize: isMobile ? '10px' : '11px',
                   color: 'rgba(168, 182, 210, 0.74)',
                   marginBottom: '8px',
                 }}
@@ -270,7 +297,7 @@ export function GameUI() {
               </div>
               <div
                 style={{
-                  fontSize: '24px',
+                  fontSize: isMobile ? '18px' : '24px',
                   color: '#f4f7ff',
                   fontFamily: '"Georgia", "Times New Roman", serif',
                 }}
@@ -283,7 +310,7 @@ export function GameUI() {
         <div
           style={{
             marginTop: '14px',
-            fontSize: '12px',
+            fontSize: isMobile ? '11px' : '12px',
             lineHeight: 1.7,
             color: 'rgba(190, 204, 230, 0.82)',
             fontFamily: '"Songti SC", "STSong", serif',
