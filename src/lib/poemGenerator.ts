@@ -346,6 +346,9 @@ export class PoemGenerator {
     avoidPoems: string[]
   }): Promise<string> {
     const avoidSet = new Set(context.avoidPoems.map(poem => poem.trim()).filter(Boolean))
+    const normalizedAvoidSet = new Set(
+      context.avoidPoems.map(poem => normalizePoemText(poem)).filter(Boolean)
+    )
 
     for (let attempt = 0; attempt < 2; attempt += 1) {
       if (this.llmBatchBuffer.length === 0) {
@@ -354,7 +357,8 @@ export class PoemGenerator {
 
       while (this.llmBatchBuffer.length > 0) {
         const poem = this.llmBatchBuffer.shift() || ''
-        if (poem && !avoidSet.has(poem)) {
+        const normalizedPoem = normalizePoemText(poem)
+        if (poem && !avoidSet.has(poem) && !normalizedAvoidSet.has(normalizedPoem)) {
           if (this.llmBatchBuffer.length <= 2 && !this.llmBatchPromise) {
             void this.requestLLMBatch(context).catch(error => {
               console.warn('[PoemGenerator] Background LLM prefetch failed:', error)
@@ -378,6 +382,9 @@ export class PoemGenerator {
     const now = Date.now()
     const forcePreset = context.forcePreset === true
     const avoidPoems = new Set((context.avoidPoems || []).map(poem => poem.trim()).filter(Boolean))
+    const normalizedAvoidPoems = new Set(
+      (context.avoidPoems || []).map(poem => normalizePoemText(poem)).filter(Boolean)
+    )
     const avoidPoemList = [...avoidPoems]
     const isInCooldown = now - lastLLMFailureTime < FAILURE_COOLDOWN
     const isInRequestCooldown = now - lastLLMRequestTime < REQUEST_COOLDOWN
@@ -399,7 +406,11 @@ export class PoemGenerator {
           avoidPoems: avoidPoemList,
         })
 
-        if (text && !avoidPoems.has(text)) {
+        if (
+          text &&
+          !avoidPoems.has(text) &&
+          !normalizedAvoidPoems.has(normalizePoemText(text))
+        ) {
           source = 'llm'
           llmFailureCount = 0
           console.log('[PoemGenerator] LLM batch generated poem:', text)

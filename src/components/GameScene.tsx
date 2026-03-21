@@ -827,7 +827,7 @@ export function GameScene() {
 
     const generator = poemGeneratorRef.current
     const clickedPoems = likedPoems
-    const avoidPoems = poems.map(poem => poem.text)
+    const avoidPoems = [...poems.map(poem => poem.text), ...likedPoems]
     const step = currentStep
     const clickRate = currentStep > 0 ? likedPoems.length / currentStep : 0
 
@@ -874,6 +874,7 @@ export function GameScene() {
       for (let attempt = 0; attempt < 4; attempt += 1) {
         const { likedPoems, currentStep, poems } = useGameStore.getState()
         const avoidPoems = [
+          ...likedPoems,
           ...poems.map(poem => poem.text),
           ...Array.from(pendingPoemTextsRef.current),
         ]
@@ -888,8 +889,15 @@ export function GameScene() {
 
         const normalizedText = normalizePoemTextForDedup(candidate.text)
         const existingPoems = useGameStore.getState().poems
+        const likedPoemSet = new Set(
+          useGameStore
+            .getState()
+            .likedPoems.map(poem => normalizePoemTextForDedup(poem))
+            .filter(Boolean)
+        )
         const hasDuplicate =
           !normalizedText ||
+          likedPoemSet.has(normalizedText) ||
           existingPoems.some(poem => normalizePoemTextForDedup(poem.text) === normalizedText) ||
           pendingPoemTextsRef.current.has(normalizedText)
 
