@@ -1,10 +1,178 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useGameStore } from '../stores/gameStore'
-import { streamLLM, generateInsightPrompt, generateInsightSystemPrompt } from '../lib/llm'
+import {
+  streamLLM,
+  generateInsightPrompt,
+  generateInsightSystemPrompt,
+} from '../lib/llm'
 import { CosmicBackdrop } from './CosmicBackdrop'
 
 function formatDisplayedPoem(text: string): string {
-  return text.replace(/\s*\n+\s*/g, 'ï¼Œ').trim()
+  return text.replace(/\s*\n+\s*/g, '£¬').trim()
+}
+
+function wrapCanvasText(
+  context: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number
+): string[] {
+  const lines: string[] = []
+  const paragraphs = text.split('\n').filter(Boolean)
+
+  paragraphs.forEach(paragraph => {
+    let currentLine = ''
+
+    for (const char of paragraph) {
+      const nextLine = `${currentLine}${char}`
+      if (currentLine && context.measureText(nextLine).width > maxWidth) {
+        lines.push(currentLine)
+        currentLine = char
+      } else {
+        currentLine = nextLine
+      }
+    }
+
+    if (currentLine) {
+      lines.push(currentLine)
+    }
+
+    lines.push('')
+  })
+
+  if (lines[lines.length - 1] === '') {
+    lines.pop()
+  }
+
+  return lines
+}
+
+async function buildShareImage(options: {
+  likedPoems: string[]
+  insight: string
+  totalGenerated: number
+  totalLiked: number
+}): Promise<Blob> {
+  const canvas = document.createElement('canvas')
+  canvas.width = 1080
+  canvas.height = 1600
+
+  const context = canvas.getContext('2d')
+  if (!context) {
+    throw new Error('Canvas not supported')
+  }
+
+  const gradient = context.createLinearGradient(0, 0, 1080, 1600)
+  gradient.addColorStop(0, '#071224')
+  gradient.addColorStop(0.55, '#101a37')
+  gradient.addColorStop(1, '#030712')
+  context.fillStyle = gradient
+  context.fillRect(0, 0, canvas.width, canvas.height)
+
+  context.fillStyle = 'rgba(152, 193, 255, 0.08)'
+  context.beginPath()
+  context.arc(180, 220, 180, 0, Math.PI * 2)
+  context.fill()
+  context.beginPath()
+  context.arc(920, 340, 220, 0, Math.PI * 2)
+  context.fill()
+  context.beginPath()
+  context.arc(840, 1280, 260, 0, Math.PI * 2)
+  context.fill()
+
+  context.strokeStyle = 'rgba(255, 255, 255, 0.08)'
+  context.lineWidth = 2
+  context.strokeRect(56, 56, 968, 1488)
+
+  context.fillStyle = '#f5f7ff'
+  context.font = '700 64px "Microsoft YaHei UI", "PingFang SC", sans-serif'
+  context.fillText('¹Û²â¼´ÒâÒå', 96, 148)
+
+  context.fillStyle = 'rgba(216, 227, 255, 0.72)'
+  context.font = '28px "Microsoft YaHei UI", "PingFang SC", sans-serif'
+  context.fillText('Shiyun Observer ¡¤ ÒâÒå¶´²ì·ÖÏí', 96, 198)
+
+  context.fillStyle = 'rgba(12, 18, 36, 0.82)'
+  context.fillRect(84, 252, 912, 186)
+  context.strokeStyle = 'rgba(255, 255, 255, 0.08)'
+  context.strokeRect(84, 252, 912, 186)
+
+  const stats = [
+    ['Éú³ÉÊ«¾ä', String(options.totalGenerated)],
+    ['È·ÈÏÏ²»¶', String(options.totalLiked)],
+    [
+      'Æ«ºÃÂÊ',
+      `${Math.round((options.totalLiked / Math.max(options.totalGenerated, 1)) * 100)}%`,
+    ],
+  ]
+
+  stats.forEach(([label, value], index) => {
+    const x = 124 + index * 292
+    context.fillStyle = 'rgba(207, 220, 255, 0.68)'
+    context.font = '26px "Microsoft YaHei UI", "PingFang SC", sans-serif'
+    context.fillText(label, x, 316)
+    context.fillStyle = '#ffffff'
+    context.font = '700 62px Georgia, serif'
+    context.fillText(value, x, 394)
+  })
+
+  context.fillStyle = 'rgba(12, 18, 36, 0.82)'
+  context.fillRect(84, 474, 912, 372)
+  context.strokeStyle = 'rgba(255, 255, 255, 0.08)'
+  context.strokeRect(84, 474, 912, 372)
+  context.fillStyle = '#d8e4ff'
+  context.font = '600 34px "Microsoft YaHei UI", "PingFang SC", sans-serif'
+  context.fillText('ÎÒÈ·ÈÏÏ²»¶µÄÊ«¾ä', 120, 534)
+
+  const likedText =
+    options.likedPoems.length > 0
+      ? options.likedPoems
+          .slice(0, 5)
+          .map((poem, index) => `${index + 1}. ${formatDisplayedPoem(poem)}`)
+          .join('\n')
+      : 'ÕâÒ»ÂÖÄã»¹Ã»ÓĞÈ·ÈÏÏ²»¶µÄÊ«¾ä¡£'
+
+  context.fillStyle = 'rgba(244, 247, 255, 0.92)'
+  context.font = '34px "Songti SC", "STSong", serif'
+  wrapCanvasText(context, likedText, 820)
+    .slice(0, 7)
+    .forEach((line, index) => {
+      context.fillText(line || ' ', 120, 608 + index * 42)
+    })
+
+  context.fillStyle = 'rgba(12, 18, 36, 0.82)'
+  context.fillRect(84, 886, 912, 530)
+  context.strokeStyle = 'rgba(255, 255, 255, 0.08)'
+  context.strokeRect(84, 886, 912, 530)
+  context.fillStyle = '#d8e4ff'
+  context.font = '600 34px "Microsoft YaHei UI", "PingFang SC", sans-serif'
+  context.fillText('AI ¶´²ìÕªÂ¼', 120, 946)
+
+  const insightText =
+    options.insight.length > 220
+      ? `${options.insight.slice(0, 220).trim()}¡­¡­`
+      : options.insight
+
+  context.fillStyle = 'rgba(244, 247, 255, 0.92)'
+  context.font = '32px "Microsoft YaHei UI", "PingFang SC", sans-serif'
+  wrapCanvasText(context, insightText, 820)
+    .slice(0, 10)
+    .forEach((line, index) => {
+      context.fillText(line || ' ', 120, 1028 + index * 44)
+    })
+
+  context.fillStyle = 'rgba(216, 227, 255, 0.6)'
+  context.font = '26px "Microsoft YaHei UI", "PingFang SC", sans-serif'
+  context.fillText('À´×Ô ¹Û²â¼´ÒâÒå ¡¤ Shiyun Observer', 84, 1492)
+
+  const blob = await new Promise<Blob | null>(resolve =>
+    canvas.toBlob(resolve, 'image/png')
+  )
+
+  if (!blob) {
+    throw new Error('Failed to export image')
+  }
+
+  return blob
 }
 
 export function AnalysisPage() {
@@ -22,6 +190,7 @@ export function AnalysisPage() {
   const [isStreaming, setIsStreaming] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [retryNonce, setRetryNonce] = useState(0)
+  const [isSavingImage, setIsSavingImage] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const [isMobile, setIsMobile] = useState(false)
 
@@ -50,7 +219,9 @@ export function AnalysisPage() {
     setIsStreaming(true)
 
     const generateInsight = async () => {
-      if (!llmConfig) return
+      if (!llmConfig) {
+        return
+      }
 
       const clickedPoems = likedPoems
       const totalPoems = totalGenerated
@@ -73,15 +244,19 @@ export function AnalysisPage() {
           systemPrompt: generateInsightSystemPrompt(),
           maxTokens: 8192,
         })) {
-          if (!mounted) return
+          if (!mounted) {
+            return
+          }
           fullText += chunk
           updateCurrentInsight(fullText)
         }
         setIsStreaming(false)
       } catch (err) {
-        if (!mounted) return
+        if (!mounted) {
+          return
+        }
         console.error('Failed to generate insight:', err)
-        setError('ç”Ÿæˆæ´å¯Ÿæ—¶å‡ºé”™ï¼Œè¯·æ£€æŸ¥ API Key æ˜¯å¦æ­£ç¡®')
+        setError('Éú³É¶´²ìÊ±³ö´í£¬Çë¼ì²é API Key ÊÇ·ñÕıÈ·')
         setIsStreaming(false)
       }
     }
@@ -106,6 +281,34 @@ export function AnalysisPage() {
     setError(null)
     setIsStreaming(true)
     setRetryNonce(value => value + 1)
+  }
+
+  const handleSaveImage = async () => {
+    if (isStreaming || !currentInsight.trim()) {
+      return
+    }
+
+    try {
+      setIsSavingImage(true)
+      const blob = await buildShareImage({
+        likedPoems,
+        insight: currentInsight,
+        totalGenerated,
+        totalLiked: likedPoems.length,
+      })
+
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `shiyun-observer-${Date.now()}.png`
+      link.click()
+      URL.revokeObjectURL(url)
+    } catch (saveError) {
+      console.error('Failed to save image:', saveError)
+      window.alert('±£´æÍ¼Æ¬Ê§°Ü£¬ÇëÉÔºóÔÙÊÔ')
+    } finally {
+      setIsSavingImage(false)
+    }
   }
 
   return (
@@ -149,7 +352,6 @@ export function AnalysisPage() {
           zIndex: 1,
         }}
       >
-        {/* æ ‡é¢˜ */}
         <div style={{ marginBottom: '32px' }}>
           <h2
             style={{
@@ -162,7 +364,7 @@ export function AnalysisPage() {
               WebkitTextFillColor: 'transparent',
             }}
           >
-            æ„ä¹‰æ´å¯Ÿ
+            ÒâÒå¶´²ì
           </h2>
           <p
             style={{
@@ -171,7 +373,7 @@ export function AnalysisPage() {
               margin: 0,
             }}
           >
-            AI å¯¹ä½ çš„å®¡ç¾ä¸æ„ä¹‰æ„å»ºçš„æ·±åº¦åˆ†æ
+            AI ¶ÔÄãµÄÉóÃÀÓëÒâÒå½¨¹¹µÄÉî¶È·ÖÎö
           </p>
         </div>
 
@@ -209,7 +411,7 @@ export function AnalysisPage() {
                     marginBottom: '4px',
                   }}
                 >
-                  ä½ å–œæ¬¢è¿‡çš„è¯—å¥
+                  ÄãÏ²»¶¹ıµÄÊ«¾ä
                 </div>
                 <div
                   style={{
@@ -217,7 +419,7 @@ export function AnalysisPage() {
                     fontSize: '13px',
                   }}
                 >
-                  æœ¬è½®è§‚æµ‹ä¸­è¢«ä½ ç¡®è®¤è¿‡çš„å…¨éƒ¨é€‰æ‹©
+                  ±¾ÂÖ¹Û²âÖĞ±»ÄãÈ·ÈÏ¹ıµÄÈ«²¿Ñ¡Ôñ
                 </div>
               </div>
               <div
@@ -227,7 +429,7 @@ export function AnalysisPage() {
                   fontWeight: 600,
                 }}
               >
-                {likedPoems.length} å¥
+                {likedPoems.length} ¾ä
               </div>
             </div>
 
@@ -285,146 +487,170 @@ export function AnalysisPage() {
                   lineHeight: 1.7,
                 }}
               >
-                è¿™ä¸€è½®ä½ è¿˜æ²¡æœ‰ç¡®è®¤è¿‡è¯—å¥ï¼Œæ‰€ä»¥ç³»ç»Ÿåªèƒ½æ ¹æ®æµè§ˆè¡Œä¸ºç”Ÿæˆè¾ƒå¼±çš„æ´å¯Ÿã€‚
+                ÕâÒ»ÂÖÄã»¹Ã»ÓĞÈ·ÈÏÏ²»¶µÄÊ«¾ä£¬ËùÒÔÏµÍ³Ö»ÄÜ¸ù¾İä¯ÀÀĞĞÎªÉú³É½ÏÈõµÄ¶´²ì¡£
               </div>
             )}
           </div>
 
           <div>
-        {/* åŠ è½½çŠ¶æ€ */}
-        {isStreaming && !error && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              marginBottom: '24px',
-              color: 'rgba(255, 255, 255, 0.6)',
-              fontSize: '14px',
-            }}
-          >
+            {isStreaming && !error && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  marginBottom: '24px',
+                  color: 'rgba(255, 255, 255, 0.6)',
+                  fontSize: '14px',
+                }}
+              >
+                <div
+                  style={{
+                    width: '16px',
+                    height: '16px',
+                    border: '2px solid rgba(102, 126, 234, 0.3)',
+                    borderTopColor: '#667eea',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite',
+                  }}
+                />
+                ÕıÔÚÉú³É¶´²ì...
+              </div>
+            )}
+
+            {error && (
+              <div
+                style={{
+                  padding: '16px',
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  borderRadius: '12px',
+                  color: '#fca5a5',
+                  fontSize: '14px',
+                  marginBottom: '24px',
+                }}
+              >
+                <div style={{ marginBottom: '14px' }}>{error}</div>
+                <button
+                  onClick={handleRetry}
+                  disabled={isStreaming}
+                  style={{
+                    padding: '10px 16px',
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.14)',
+                    borderRadius: '10px',
+                    color: 'white',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    cursor: isStreaming ? 'not-allowed' : 'pointer',
+                    opacity: isStreaming ? 0.5 : 1,
+                  }}
+                >
+                  ÖØÊÔÉú³É
+                </button>
+              </div>
+            )}
+
             <div
               style={{
-                width: '16px',
-                height: '16px',
-                border: '2px solid rgba(102, 126, 234, 0.3)',
-                borderTopColor: '#667eea',
-                borderRadius: '50%',
-                animation: 'spin 1s linear infinite',
-              }}
-            />
-            æ­£åœ¨ç”Ÿæˆæ´å¯Ÿ...
-          </div>
-        )}
-
-        {/* é”™è¯¯çŠ¶æ€ */}
-        {error && (
-          <div
-            style={{
-              padding: '16px',
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              borderRadius: '12px',
-              color: '#fca5a5',
-              fontSize: '14px',
-              marginBottom: '24px',
-            }}
-          >
-            <div style={{ marginBottom: '14px' }}>{error}</div>
-            <button
-              onClick={handleRetry}
-              disabled={isStreaming}
-              style={{
-                padding: '10px 16px',
-                background: 'rgba(255, 255, 255, 0.08)',
-                border: '1px solid rgba(255, 255, 255, 0.14)',
-                borderRadius: '10px',
-                color: 'white',
-                fontSize: '13px',
-                fontWeight: 600,
-                cursor: isStreaming ? 'not-allowed' : 'pointer',
-                opacity: isStreaming ? 0.5 : 1,
+                color: 'rgba(255, 255, 255, 0.9)',
+                fontSize: '16px',
+                lineHeight: '1.8',
+                whiteSpace: 'pre-wrap',
+                paddingBottom: '32px',
               }}
             >
-              é‡è¯•ç”Ÿæˆ
-            </button>
-          </div>
-        )}
+              {currentInsight || (isStreaming ? 'ÕıÔÚË¼¿¼...' : '')}
+              {isStreaming && currentInsight && (
+                <span
+                  style={{
+                    display: 'inline-block',
+                    width: '2px',
+                    height: '1em',
+                    background: '#667eea',
+                    marginLeft: '2px',
+                    animation: 'blink 1s infinite',
+                  }}
+                />
+              )}
+            </div>
 
-        {/* æ´å¯Ÿå†…å®¹ */}
-        <div
-          style={{
-            color: 'rgba(255, 255, 255, 0.9)',
-            fontSize: '16px',
-            lineHeight: '1.8',
-            whiteSpace: 'pre-wrap',
-            paddingBottom: '32px',
-          }}
-        >
-          {currentInsight || (isStreaming ? 'æ­£åœ¨æ€è€ƒ...' : '')}
-          {isStreaming && currentInsight && (
-            <span
+            <div
               style={{
-                display: 'inline-block',
-                width: '2px',
-                height: '1em',
-                background: '#667eea',
-                marginLeft: '2px',
-                animation: 'blink 1s infinite',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                gap: '16px',
+                marginBottom: '32px',
               }}
-            />
-          )}
-        </div>
+            >
+              <StatCard label="Éú³ÉÊ«¾ä" value={totalGenerated} unit="¾ä" />
+              <StatCard label="È·ÈÏÏ²»¶" value={likedPoems.length} unit="¾ä" />
+              <StatCard
+                label="Æ«ºÃÂÊ"
+                value={Math.round((likedPoems.length / Math.max(poems.length, 1)) * 100)}
+                unit="%"
+              />
+            </div>
 
-        {/* ç»Ÿè®¡å¡ç‰‡ */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-            gap: '16px',
-            marginBottom: '32px',
-          }}
-        >
-          <StatCard label="ç”Ÿæˆè¯—å¥" value={totalGenerated} unit="å¥" />
-          <StatCard
-            label="ç‚¹å‡»å–œæ¬¢"
-            value={likedPoems.length}
-            unit="å¥"
-          />
-          <StatCard
-            label={`${Math.round((likedPoems.length / Math.max(poems.length, 1)) * 100)}%`}
-            value={likedPoems.length}
-            unit=""
-          />
-        </div>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, minmax(0, 1fr))',
+                gap: '12px',
+              }}
+            >
+              <button
+                onClick={handleSaveImage}
+                disabled={isStreaming || isSavingImage || !currentInsight.trim()}
+                style={{
+                  width: '100%',
+                  padding: '16px',
+                  background:
+                    isStreaming || isSavingImage || !currentInsight.trim()
+                      ? 'rgba(255, 255, 255, 0.05)'
+                      : 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  borderRadius: '14px',
+                  color: 'white',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor:
+                    isStreaming || isSavingImage || !currentInsight.trim()
+                      ? 'not-allowed'
+                      : 'pointer',
+                  opacity: isStreaming || isSavingImage || !currentInsight.trim() ? 0.5 : 1,
+                  transition: 'all 0.3s',
+                }}
+              >
+                {isSavingImage ? '±£´æÖĞ...' : '±£´æÍ¼Æ¬'}
+              </button>
 
-        {/* é‡æ–°å¼€å§‹æŒ‰é’® */}
-        <button
-          onClick={handleRestart}
-          disabled={isStreaming}
-          style={{
-            width: '100%',
-            padding: '16px',
-            background: isStreaming
-              ? 'rgba(255, 255, 255, 0.05)'
-              : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            border: 'none',
-            borderRadius: '14px',
-            color: 'white',
-            fontSize: '16px',
-            fontWeight: '600',
-            cursor: isStreaming ? 'not-allowed' : 'pointer',
-            opacity: isStreaming ? 0.5 : 1,
-            transition: 'all 0.3s',
-          }}
-        >
-          é‡æ–°å¼€å§‹
-        </button>
+              <button
+                onClick={handleRestart}
+                disabled={isStreaming}
+                style={{
+                  width: '100%',
+                  padding: '16px',
+                  background: isStreaming
+                    ? 'rgba(255, 255, 255, 0.05)'
+                    : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  border: 'none',
+                  borderRadius: '14px',
+                  color: 'white',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor: isStreaming ? 'not-allowed' : 'pointer',
+                  opacity: isStreaming ? 0.5 : 1,
+                  transition: 'all 0.3s',
+                }}
+              >
+                ÖØĞÂ¿ªÊ¼
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* åŠ¨ç”»æ ·å¼ */}
       <style>{`
         @keyframes spin {
           to { transform: rotate(360deg); }
@@ -432,10 +658,6 @@ export function AnalysisPage() {
         @keyframes blink {
           0%, 50% { opacity: 1; }
           51%, 100% { opacity: 0; }
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; transform: scale(0.95); }
-          to { opacity: 1; transform: scale(1); }
         }
       `}</style>
     </div>
