@@ -91,10 +91,10 @@ export function GameUI() {
           transform: 'translateX(-50%)',
           width: isMobile ? 'calc(100vw - 20px)' : 'min(1100px, calc(100vw - 40px))',
           display: 'flex',
-          alignItems: isMobile ? 'stretch' : 'center',
+          alignItems: 'center',
           justifyContent: 'space-between',
-          flexDirection: isMobile ? 'column' : 'row',
-          gap: isMobile ? '4px' : '18px',
+          flexDirection: 'row',
+          gap: isMobile ? '8px' : '18px',
           zIndex: 20,
           pointerEvents: isMobile ? 'auto' : 'none',
         }}
@@ -110,7 +110,6 @@ export function GameUI() {
             border: '1px solid rgba(255, 255, 255, 0.12)',
             boxShadow: '0 18px 60px rgba(0, 0, 0, 0.28)',
             backdropFilter: 'blur(18px)',
-            alignSelf: isMobile ? 'flex-start' : 'auto',
           }}
         >
           <span
@@ -135,40 +134,40 @@ export function GameUI() {
           </span>
         </div>
 
-        <div
-          style={{
-            flex: 1,
-            minWidth: 0,
-            width: isMobile ? '100%' : 'auto',
-            padding: isMobile ? '9px 12px' : '14px 22px',
-            borderRadius: '999px',
-            background: 'rgba(7, 12, 28, 0.52)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            backdropFilter: 'blur(16px)',
-            color: 'rgba(224, 233, 246, 0.9)',
-            fontSize: isMobile ? '11px' : '13px',
-            textAlign: 'center',
-            letterSpacing: isMobile ? '0.03em' : '0.08em',
-            fontFamily: '"Songti SC", "STSong", serif',
-            boxShadow: '0 18px 55px rgba(0, 0, 0, 0.24)',
-          }}
-        >
-          {statusMessage}
-        </div>
+        {!isMobile && (
+          <div
+            style={{
+              flex: 1,
+              minWidth: 0,
+              padding: '14px 22px',
+              borderRadius: '999px',
+              background: 'rgba(7, 12, 28, 0.52)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              backdropFilter: 'blur(16px)',
+              color: 'rgba(224, 233, 246, 0.9)',
+              fontSize: '13px',
+              textAlign: 'center',
+              letterSpacing: '0.08em',
+              fontFamily: '"Songti SC", "STSong", serif',
+              boxShadow: '0 18px 55px rgba(0, 0, 0, 0.24)',
+            }}
+          >
+            {statusMessage}
+          </div>
+        )}
 
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
+            gap: isMobile ? '8px' : '10px',
             pointerEvents: 'auto',
-            width: isMobile ? '100%' : 'auto',
+            width: 'auto',
           }}
         >
           <button
             onClick={reset}
             style={{
-              flex: isMobile ? 1 : 'none',
               padding: isMobile ? '8px 12px' : '12px 18px',
               borderRadius: '999px',
               border: '1px solid rgba(255, 255, 255, 0.12)',
@@ -184,7 +183,6 @@ export function GameUI() {
           <button
             onClick={endGame}
             style={{
-              flex: isMobile ? 1 : 'none',
               padding: isMobile ? '8px 12px' : '12px 18px',
               borderRadius: '999px',
               border: '1px solid rgba(255, 234, 188, 0.35)',
@@ -204,7 +202,7 @@ export function GameUI() {
       <div
         style={{
           position: 'fixed',
-          top: isMobile ? 'max(104px, calc(env(safe-area-inset-top) + 104px))' : '86px',
+          top: isMobile ? 'max(42px, calc(env(safe-area-inset-top) + 42px))' : '86px',
           left: '50%',
           transform: 'translateX(-50%)',
           width: isMobile ? 'calc(100vw - 24px)' : 'min(560px, calc(100vw - 48px))',
@@ -233,6 +231,33 @@ export function GameUI() {
           />
         </div>
       </div>
+
+      {isMobile && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 'max(56px, calc(env(safe-area-inset-top) + 56px))',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: 'calc(100vw - 20px)',
+            zIndex: 20,
+            pointerEvents: 'none',
+            padding: '8px 12px',
+            borderRadius: '999px',
+            background: 'rgba(7, 12, 28, 0.52)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            backdropFilter: 'blur(16px)',
+            color: 'rgba(224, 233, 246, 0.9)',
+            fontSize: '11px',
+            textAlign: 'center',
+            letterSpacing: '0.03em',
+            fontFamily: '"Songti SC", "STSong", serif',
+            boxShadow: '0 12px 30px rgba(0, 0, 0, 0.2)',
+          }}
+        >
+          {statusMessage}
+        </div>
+      )}
 
       <div
         style={{
