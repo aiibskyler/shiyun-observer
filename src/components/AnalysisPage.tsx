@@ -445,7 +445,7 @@ export function AnalysisPage() {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 gap: '12px',
-                marginBottom: '18px',
+                marginBottom: '20px',
               }}
             >
               <div>
@@ -470,9 +470,14 @@ export function AnalysisPage() {
               </div>
               <div
                 style={{
-                  color: '#c7d8ff',
-                  fontSize: '14px',
+                  color: '#d8e4ff',
+                  fontSize: '13px',
                   fontWeight: 600,
+                  letterSpacing: '0.08em',
+                  padding: '8px 12px',
+                  borderRadius: '999px',
+                  background: 'rgba(122, 146, 255, 0.1)',
+                  border: '1px solid rgba(148, 163, 255, 0.16)',
                 }}
               >
                 {likedPoems.length} 句
@@ -481,12 +486,15 @@ export function AnalysisPage() {
 
             {likedPoems.length > 0 ? (
               <div
+                className="analysis-liked-list"
                 style={{
                   display: 'grid',
-                  gap: '10px',
+                  gap: '12px',
                   maxHeight: isMobile ? 'none' : '540px',
                   overflowY: isMobile ? 'visible' : 'auto',
-                  paddingRight: '4px',
+                  paddingRight: isMobile ? '0' : '10px',
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: 'rgba(155, 177, 255, 0.38) rgba(255, 255, 255, 0.03)',
                 }}
               >
                 {likedPoemRecords.map((poem, index) => (
@@ -495,58 +503,85 @@ export function AnalysisPage() {
                     style={{
                       display: 'flex',
                       alignItems: 'flex-start',
-                      gap: '12px',
-                      padding: '12px 14px',
-                      background: 'rgba(102, 126, 234, 0.08)',
-                      border: '1px solid rgba(148, 163, 255, 0.16)',
-                      borderRadius: '14px',
+                      gap: isMobile ? '12px' : '16px',
+                      padding: isMobile ? '14px 14px 13px' : '15px 16px 14px',
+                      background:
+                        'linear-gradient(180deg, rgba(43, 48, 79, 0.94) 0%, rgba(36, 40, 67, 0.94) 100%)',
+                      border: '1px solid rgba(112, 128, 214, 0.28)',
+                      borderRadius: '20px',
+                      boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.03)',
                     }}
                   >
                     <div
                       style={{
-                        color: 'rgba(199, 216, 255, 0.9)',
+                        color: 'rgba(208, 221, 255, 0.92)',
                         fontSize: '12px',
-                        lineHeight: 1.8,
-                        minWidth: '28px',
+                        lineHeight: 1,
+                        minWidth: isMobile ? '44px' : '48px',
+                        paddingTop: '2px',
                       }}
                     >
-                      {String(index + 1).padStart(2, '0')}
+                      <div
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          minWidth: isMobile ? '40px' : '42px',
+                          height: isMobile ? '28px' : '30px',
+                          padding: '0 10px',
+                          borderRadius: '999px',
+                          background: 'rgba(166, 190, 255, 0.1)',
+                          border: '1px solid rgba(160, 181, 255, 0.16)',
+                          letterSpacing: '0.08em',
+                          fontWeight: 700,
+                        }}
+                      >
+                        {String(index + 1).padStart(2, '0')}
+                      </div>
                     </div>
                     <div
                       style={{
-                        color: 'rgba(255, 255, 255, 0.9)',
-                        fontSize: '15px',
-                        lineHeight: 1.8,
-                        whiteSpace: 'normal',
+                        flex: 1,
+                        minWidth: 0,
                       }}
                     >
-                      <div>
+                      <div
+                        style={{
+                          color: '#f7f8ff',
+                          fontSize: isMobile ? '15px' : '16px',
+                          lineHeight: 1.75,
+                          whiteSpace: 'normal',
+                          fontFamily: '"Songti SC", "STSong", serif',
+                          letterSpacing: '0.02em',
+                        }}
+                      >
+                        {formatDisplayedPoem(poem.text)}
+                      </div>
+                      {(poem.author || poem.title) && (
                         <div
                           style={{
-                            color: 'rgba(255, 255, 255, 0.9)',
-                            fontSize: '15px',
-                            lineHeight: 1.8,
-                            whiteSpace: 'normal',
+                            marginTop: '8px',
+                            color: 'rgba(184, 199, 236, 0.78)',
+                            fontSize: '12px',
+                            lineHeight: 1.5,
+                            letterSpacing: '0.04em',
                           }}
                         >
-                          {formatDisplayedPoem(poem.text)}
-                        </div>
-                        {(poem.author || poem.title) && (
-                          <div
+                          <span
                             style={{
-                              marginTop: '4px',
-                              color: 'rgba(199, 216, 255, 0.64)',
-                              fontSize: '12px',
-                              lineHeight: 1.6,
+                              display: 'inline-block',
+                              marginRight: '8px',
+                              color: 'rgba(148, 167, 222, 0.68)',
                             }}
                           >
-                            {poem.author ?? ''}
-                            {poem.author && poem.title ? '《' : ''}
-                            {poem.title ?? ''}
-                            {poem.title ? '》' : ''}
-                          </div>
-                        )}
-                      </div>
+                            SOURCE
+                          </span>
+                          {poem.author ?? ''}
+                          {poem.author && poem.title ? '《' : ''}
+                          {poem.title ?? ''}
+                          {poem.title ? '》' : ''}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -730,6 +765,18 @@ export function AnalysisPage() {
         @keyframes blink {
           0%, 50% { opacity: 1; }
           51%, 100% { opacity: 0; }
+        }
+        .analysis-liked-list::-webkit-scrollbar {
+          width: 10px;
+        }
+        .analysis-liked-list::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.04);
+          border-radius: 999px;
+        }
+        .analysis-liked-list::-webkit-scrollbar-thumb {
+          background: linear-gradient(180deg, rgba(168, 189, 255, 0.7) 0%, rgba(133, 156, 231, 0.55) 100%);
+          border-radius: 999px;
+          border: 2px solid rgba(22, 26, 46, 0.9);
         }
       `}</style>
     </div>
