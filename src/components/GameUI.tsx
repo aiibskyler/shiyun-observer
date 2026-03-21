@@ -2,6 +2,8 @@
 import type { CSSProperties } from 'react'
 import { useGameStore } from '../stores/gameStore'
 
+const STATUS_ROTATION_INTERVAL = 6800
+
 type ProgressBurst = {
   id: number
   x: number
@@ -14,69 +16,54 @@ function pickStatusMessage(messages: string[], seed: number): string {
   return messages[Math.abs(seed) % messages.length]
 }
 
-function getStatusMessage(totalPoems: number, clickedCount: number, llmCount: number): string {
+function getStatusMessages(totalPoems: number, clickedCount: number, llmCount: number): string[] {
   if (clickedCount === 0) {
-    return pickStatusMessage(
-      [
-        '把鼠标移向诗云，双击一个节点，让意义开始偏转',
-        '先停在一朵诗云前，看看哪一句先把你叫住',
-        '别急着解释自己，先让一句诗替你作出选择',
-        '在这片云层里犹豫，本身就是意义形成的一部分',
-        '先去碰一碰那些发亮的句子，系统会记住你的停顿',
-      ],
-      totalPoems
-    )
+    return [
+      '\u628a\u9f20\u6807\u79fb\u5411\u8bd7\u4e91\uff0c\u53cc\u51fb\u4e00\u4e2a\u8282\u70b9\uff0c\u8ba9\u610f\u4e49\u5f00\u59cb\u504f\u8f6c',
+      '\u5148\u505c\u5728\u4e00\u6735\u8bd7\u4e91\u524d\uff0c\u770b\u770b\u54ea\u4e00\u53e5\u5148\u628a\u4f60\u53eb\u4f4f',
+      '\u522b\u6025\u7740\u89e3\u91ca\u81ea\u5df1\uff0c\u5148\u8ba9\u4e00\u53e5\u8bd7\u66ff\u4f60\u4f5c\u51fa\u9009\u62e9',
+      '\u5728\u8fd9\u7247\u4e91\u5c42\u91cc\u72b9\u8c6b\uff0c\u672c\u8eab\u5c31\u662f\u610f\u4e49\u5f62\u6210\u7684\u4e00\u90e8\u5206',
+      '\u5148\u53bb\u78b0\u4e00\u78b0\u90a3\u4e9b\u53d1\u4eae\u7684\u53e5\u5b50\uff0c\u7cfb\u7edf\u4f1a\u8bb0\u4f4f\u4f60\u7684\u505c\u987f',
+    ]
   }
 
   if (clickedCount < 3) {
-    return pickStatusMessage(
-      [
-        '你正在塑造意义，星群开始记住你的偏好',
-        '最初的几次确认，正在悄悄改变诗云的航线',
-        '系统还在摸索你偏向哪一种回声',
-        '每一次双击都像一次轻微校准，场域正在向你靠近',
-        '你给出的不是答案，而是诗云继续生长的方向',
-      ],
-      clickedCount + totalPoems
-    )
+    return [
+      '\u4f60\u6b63\u5728\u5851\u9020\u610f\u4e49\uff0c\u661f\u7fa4\u5f00\u59cb\u8bb0\u4f4f\u4f60\u7684\u504f\u597d',
+      '\u6700\u521d\u7684\u51e0\u6b21\u786e\u8ba4\uff0c\u6b63\u5728\u6084\u6084\u6539\u53d8\u8bd7\u4e91\u7684\u822a\u7ebf',
+      '\u7cfb\u7edf\u8fd8\u5728\u6478\u7d22\u4f60\u504f\u5411\u54ea\u4e00\u79cd\u56de\u58f0',
+      '\u6bcf\u4e00\u6b21\u53cc\u51fb\u90fd\u50cf\u4e00\u6b21\u8f7b\u5fae\u6821\u51c6\uff0c\u573a\u57df\u6b63\u5728\u5411\u4f60\u9760\u8fd1',
+      '\u4f60\u7ed9\u51fa\u7684\u4e0d\u662f\u7b54\u6848\uff0c\u800c\u662f\u8bd7\u4e91\u7ee7\u7eed\u751f\u957f\u7684\u65b9\u5411',
+    ]
   }
 
   if (llmCount > 0 && clickedCount < 6) {
-    return pickStatusMessage(
-      [
-        '系统正在学习你的凝视方式',
-        '新的句子开始带着你的偏好返回',
-        '诗云已经不再随机，它开始试探性地回应你',
-        '你的选择正在渗进生成逻辑，回声开始变得私人',
-        '此刻出现的句子，已经有一部分在向你靠拢',
-      ],
-      llmCount + clickedCount
-    )
+    return [
+      '\u7cfb\u7edf\u6b63\u5728\u5b66\u4e60\u4f60\u7684\u51dd\u89c6\u65b9\u5f0f',
+      '\u65b0\u7684\u53e5\u5b50\u5f00\u59cb\u5e26\u7740\u4f60\u7684\u504f\u597d\u8fd4\u56de',
+      '\u8bd7\u4e91\u5df2\u7ecf\u4e0d\u518d\u968f\u673a\uff0c\u5b83\u5f00\u59cb\u8bd5\u63a2\u6027\u5730\u56de\u5e94\u4f60',
+      '\u4f60\u7684\u9009\u62e9\u6b63\u5728\u6e17\u8fdb\u751f\u6210\u903b\u8f91\uff0c\u56de\u58f0\u5f00\u59cb\u53d8\u5f97\u79c1\u4eba',
+      '\u6b64\u523b\u51fa\u73b0\u7684\u53e5\u5b50\uff0c\u5df2\u7ecf\u6709\u4e00\u90e8\u5206\u5728\u5411\u4f60\u9760\u62e2',
+    ]
   }
 
   if (totalPoems > 18 && clickedCount > 6) {
-    return pickStatusMessage(
-      [
-        '意义密度正在上升，整片场域开始出现你的轮廓',
-        '你不是在挑选句子，而是在训练一句句诗如何接近你',
-        '系统已经学会一部分你偏爱的沉默方式',
-        '越来越多的诗句开始携带同一种暗色的吸引力',
-        '这片诗云正在从公共语言缓慢收缩成你的语言',
-      ],
-      totalPoems + clickedCount + llmCount
-    )
+    return [
+      '\u610f\u4e49\u5bc6\u5ea6\u6b63\u5728\u4e0a\u5347\uff0c\u6574\u7247\u573a\u57df\u5f00\u59cb\u51fa\u73b0\u4f60\u7684\u8f6e\u5ed3',
+      '\u4f60\u4e0d\u662f\u5728\u6311\u9009\u53e5\u5b50\uff0c\u800c\u662f\u5728\u8bad\u7ec3\u4e00\u53e5\u53e5\u8bd7\u5982\u4f55\u63a5\u8fd1\u4f60',
+      '\u7cfb\u7edf\u5df2\u7ecf\u5b66\u4f1a\u4e00\u90e8\u5206\u4f60\u504f\u7231\u7684\u6c89\u9ed8\u65b9\u5f0f',
+      '\u8d8a\u6765\u8d8a\u591a\u7684\u8bd7\u53e5\u5f00\u59cb\u643a\u5e26\u540c\u4e00\u79cd\u6697\u8272\u7684\u5438\u5f15\u529b',
+      '\u8fd9\u7247\u8bd7\u4e91\u6b63\u5728\u4ece\u516c\u5171\u8bed\u8a00\u7f13\u6162\u6536\u7f29\u6210\u4f60\u7684\u8bed\u8a00',
+    ]
   }
 
-  return pickStatusMessage(
-    [
-      '宇宙在安静地向你的选择偏移',
-      '诗云仍在漂移，但它已经不是最初那片云',
-      '你留下的每一次确认，都在改变下一句抵达的方式',
-      '某种更私人的秩序，正在这些句子之间慢慢成形',
-      '你所偏爱的，不只是句子本身，还有它们靠近你的角度',
-    ],
-    totalPoems * 3 + clickedCount + llmCount
-  )
+  return [
+    '\u5b87\u5b99\u5728\u5b89\u9759\u5730\u5411\u4f60\u7684\u9009\u62e9\u504f\u79fb',
+    '\u8bd7\u4e91\u4ecd\u5728\u6f02\u79fb\uff0c\u4f46\u5b83\u5df2\u7ecf\u4e0d\u662f\u6700\u521d\u90a3\u7247\u4e91',
+    '\u4f60\u7559\u4e0b\u7684\u6bcf\u4e00\u6b21\u786e\u8ba4\uff0c\u90fd\u5728\u6539\u53d8\u4e0b\u4e00\u53e5\u62b5\u8fbe\u7684\u65b9\u5f0f',
+    '\u67d0\u79cd\u66f4\u79c1\u4eba\u7684\u79e9\u5e8f\uff0c\u6b63\u5728\u8fd9\u4e9b\u53e5\u5b50\u4e4b\u95f4\u6162\u6162\u6210\u5f62',
+    '\u4f60\u6240\u504f\u7231\u7684\uff0c\u4e0d\u53ea\u662f\u53e5\u5b50\u672c\u8eab\uff0c\u8fd8\u6709\u5b83\u4eec\u9760\u8fd1\u4f60\u7684\u89d2\u5ea6',
+  ]
 }
 
 function clamp01(value: number): number {
@@ -99,6 +86,7 @@ export function GameUI() {
   const { poems, likedPoems, currentStep, totalSteps, endGame, reset } = useGameStore()
   const [isMobile, setIsMobile] = useState(false)
   const [progressBursts, setProgressBursts] = useState<ProgressBurst[]>([])
+  const [statusTick, setStatusTick] = useState(0)
 
   useEffect(() => {
     const media = window.matchMedia('(max-width: 768px)')
@@ -138,12 +126,22 @@ export function GameUI() {
     return () => window.removeEventListener('meaning-transfer', handleMeaningTransfer)
   }, [isMobile])
 
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setStatusTick(current => current + 1)
+    }, STATUS_ROTATION_INTERVAL)
+
+    return () => window.clearInterval(timer)
+  }, [])
+
   const generationProgress = totalSteps > 0 ? (currentStep / totalSteps) * 100 : 0
   const totalPoems = currentStep
   const clickedCount = likedPoems.length
   const llmCount = poems.filter(p => p.source === 'llm').length
   const presetCount = poems.filter(p => p.source === 'template').length
-  const statusMessage = getStatusMessage(totalPoems, clickedCount, llmCount)
+  const statusMessages = getStatusMessages(totalPoems, clickedCount, llmCount)
+  const statusSeed = totalPoems + clickedCount * 3 + llmCount * 5
+  const statusMessage = pickStatusMessage(statusMessages, statusSeed + statusTick)
   const driftProgress = getDriftProgress(totalPoems, clickedCount)
 
   return (
