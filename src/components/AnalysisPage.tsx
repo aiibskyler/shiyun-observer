@@ -46,22 +46,75 @@ function wrapCanvasText(
   return lines
 }
 
+function drawWrappedText(
+  context: CanvasRenderingContext2D,
+  lines: string[],
+  x: number,
+  startY: number,
+  lineHeight: number
+): void {
+  lines.forEach((line, index) => {
+    context.fillText(line || ' ', x, startY + index * lineHeight)
+  })
+}
+
 async function buildShareImage(options: {
   likedPoems: string[]
   insight: string
   totalGenerated: number
   totalLiked: number
 }): Promise<Blob> {
+  const measureCanvas = document.createElement('canvas')
+  const measureContext = measureCanvas.getContext('2d')
+  if (!measureContext) {
+    throw new Error('Canvas not supported')
+  }
+
+  const canvasWidth = 1080
+  const cardX = 84
+  const cardWidth = 912
+  const textX = 120
+  const textWidth = 820
+  const likedLineHeight = 42
+  const insightLineHeight = 44
+
+  const likedText =
+    options.likedPoems.length > 0
+      ? options.likedPoems
+          .map((poem, index) => `${index + 1}. ${formatDisplayedPoem(poem)}`)
+          .join('\n')
+      : '\u8fd9\u4e00\u8f6e\u4f60\u8fd8\u6ca1\u6709\u786e\u8ba4\u559c\u6b22\u7684\u8bd7\u53e5\u3002'
+
+  measureContext.font = '34px "Songti SC", "STSong", serif'
+  const likedLines = wrapCanvasText(measureContext, likedText, textWidth)
+
+  measureContext.font = '32px "Microsoft YaHei UI", "PingFang SC", sans-serif'
+  const insightLines = wrapCanvasText(
+    measureContext,
+    options.insight.trim(),
+    textWidth
+  )
+
+  const likedSectionTop = 474
+  const likedSectionHeight = Math.max(372, 134 + likedLines.length * likedLineHeight)
+  const insightSectionTop = likedSectionTop + likedSectionHeight + 40
+  const insightSectionHeight = Math.max(
+    530,
+    142 + insightLines.length * insightLineHeight
+  )
+  const footerY = insightSectionTop + insightSectionHeight + 76
+  const canvasHeight = Math.max(1600, footerY + 60)
+
   const canvas = document.createElement('canvas')
-  canvas.width = 1080
-  canvas.height = 1600
+  canvas.width = canvasWidth
+  canvas.height = canvasHeight
 
   const context = canvas.getContext('2d')
   if (!context) {
     throw new Error('Canvas not supported')
   }
 
-  const gradient = context.createLinearGradient(0, 0, 1080, 1600)
+  const gradient = context.createLinearGradient(0, 0, canvasWidth, canvasHeight)
   gradient.addColorStop(0, '#071224')
   gradient.addColorStop(0.55, '#101a37')
   gradient.addColorStop(1, '#030712')
@@ -76,31 +129,31 @@ async function buildShareImage(options: {
   context.arc(920, 340, 220, 0, Math.PI * 2)
   context.fill()
   context.beginPath()
-  context.arc(840, 1280, 260, 0, Math.PI * 2)
+  context.arc(840, canvasHeight - 280, 260, 0, Math.PI * 2)
   context.fill()
 
   context.strokeStyle = 'rgba(255, 255, 255, 0.08)'
   context.lineWidth = 2
-  context.strokeRect(56, 56, 968, 1488)
+  context.strokeRect(56, 56, 968, canvasHeight - 112)
 
   context.fillStyle = '#f5f7ff'
   context.font = '700 64px "Microsoft YaHei UI", "PingFang SC", sans-serif'
-  context.fillText('观测即意义', 96, 148)
+  context.fillText('\u89c2\u6d4b\u5373\u610f\u4e49', 96, 148)
 
   context.fillStyle = 'rgba(216, 227, 255, 0.72)'
   context.font = '28px "Microsoft YaHei UI", "PingFang SC", sans-serif'
-  context.fillText('Shiyun Observer · 意义洞察分享', 96, 198)
+  context.fillText('Shiyun Observer \u00b7 \u610f\u4e49\u6d1e\u5bdf\u5206\u4eab', 96, 198)
 
   context.fillStyle = 'rgba(12, 18, 36, 0.82)'
-  context.fillRect(84, 252, 912, 186)
+  context.fillRect(cardX, 252, cardWidth, 186)
   context.strokeStyle = 'rgba(255, 255, 255, 0.08)'
-  context.strokeRect(84, 252, 912, 186)
+  context.strokeRect(cardX, 252, cardWidth, 186)
 
   const stats = [
-    ['生成诗句', String(options.totalGenerated)],
-    ['确认喜欢', String(options.totalLiked)],
+    ['\u751f\u6210\u8bd7\u53e5', String(options.totalGenerated)],
+    ['\u786e\u8ba4\u559c\u6b22', String(options.totalLiked)],
     [
-      '偏好率',
+      '\u504f\u597d\u7387',
       `${Math.round((options.totalLiked / Math.max(options.totalGenerated, 1)) * 100)}%`,
     ],
   ]
@@ -116,53 +169,38 @@ async function buildShareImage(options: {
   })
 
   context.fillStyle = 'rgba(12, 18, 36, 0.82)'
-  context.fillRect(84, 474, 912, 372)
+  context.fillRect(cardX, likedSectionTop, cardWidth, likedSectionHeight)
   context.strokeStyle = 'rgba(255, 255, 255, 0.08)'
-  context.strokeRect(84, 474, 912, 372)
+  context.strokeRect(cardX, likedSectionTop, cardWidth, likedSectionHeight)
   context.fillStyle = '#d8e4ff'
   context.font = '600 34px "Microsoft YaHei UI", "PingFang SC", sans-serif'
-  context.fillText('我确认喜欢的诗句', 120, 534)
-
-  const likedText =
-    options.likedPoems.length > 0
-      ? options.likedPoems
-        .slice(0, 5)
-        .map((poem, index) => `${index + 1}. ${formatDisplayedPoem(poem)}`)
-        .join('\n')
-      : '这一轮你还没有确认喜欢的诗句。'
+  context.fillText('\u6211\u786e\u8ba4\u559c\u6b22\u7684\u8bd7\u53e5', textX, likedSectionTop + 60)
 
   context.fillStyle = 'rgba(244, 247, 255, 0.92)'
   context.font = '34px "Songti SC", "STSong", serif'
-  wrapCanvasText(context, likedText, 820)
-    .slice(0, 7)
-    .forEach((line, index) => {
-      context.fillText(line || ' ', 120, 608 + index * 42)
-    })
+  drawWrappedText(context, likedLines, textX, likedSectionTop + 134, likedLineHeight)
 
   context.fillStyle = 'rgba(12, 18, 36, 0.82)'
-  context.fillRect(84, 886, 912, 530)
+  context.fillRect(cardX, insightSectionTop, cardWidth, insightSectionHeight)
   context.strokeStyle = 'rgba(255, 255, 255, 0.08)'
-  context.strokeRect(84, 886, 912, 530)
+  context.strokeRect(cardX, insightSectionTop, cardWidth, insightSectionHeight)
   context.fillStyle = '#d8e4ff'
   context.font = '600 34px "Microsoft YaHei UI", "PingFang SC", sans-serif'
-  context.fillText('AI 洞察摘录', 120, 946)
-
-  const insightText =
-    options.insight.length > 220
-      ? `${options.insight.slice(0, 220).trim()}……`
-      : options.insight
+  context.fillText('AI \u6d1e\u5bdf\u6458\u5f55', textX, insightSectionTop + 60)
 
   context.fillStyle = 'rgba(244, 247, 255, 0.92)'
   context.font = '32px "Microsoft YaHei UI", "PingFang SC", sans-serif'
-  wrapCanvasText(context, insightText, 820)
-    .slice(0, 10)
-    .forEach((line, index) => {
-      context.fillText(line || ' ', 120, 1028 + index * 44)
-    })
+  drawWrappedText(
+    context,
+    insightLines,
+    textX,
+    insightSectionTop + 142,
+    insightLineHeight
+  )
 
   context.fillStyle = 'rgba(216, 227, 255, 0.6)'
   context.font = '26px "Microsoft YaHei UI", "PingFang SC", sans-serif'
-  context.fillText('来自 观测即意义 · Shiyun Observer', 84, 1492)
+  context.fillText('\u6765\u81ea \u89c2\u6d4b\u5373\u610f\u4e49 \u00b7 Shiyun Observer', 84, footerY)
 
   const blob = await new Promise<Blob | null>(resolve =>
     canvas.toBlob(resolve, 'image/png')
