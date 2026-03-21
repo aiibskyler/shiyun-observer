@@ -431,12 +431,30 @@ export function GameScene() {
   const [feedbackText, setFeedbackText] = useState<string | null>(null)
   const [showPulse, setShowPulse] = useState(false)
   const [pulseKey, setPulseKey] = useState(0)
+  const [isMobile, setIsMobile] = useState(false)
 
   const addPoem = useGameStore(s => s.addPoem)
   const updatePoem = useGameStore(s => s.updatePoem)
   const removePoem = useGameStore(s => s.removePoem)
   const llmConfig = useGameStore(s => s.llmConfig)
   const clickPoem = useGameStore(s => s.clickPoem)
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 768px)')
+    const handleChange = (event: MediaQueryListEvent) => {
+      setIsMobile(event.matches)
+    }
+
+    setIsMobile(media.matches)
+
+    if (typeof media.addEventListener === 'function') {
+      media.addEventListener('change', handleChange)
+      return () => media.removeEventListener('change', handleChange)
+    }
+
+    media.addListener(handleChange)
+    return () => media.removeListener(handleChange)
+  }, [])
 
   const clearHideCardTimeout = () => {
     if (hideCardTimeoutRef.current !== null) {
@@ -1095,10 +1113,11 @@ export function GameScene() {
             left: '50%',
             transform: 'translate(-50%, -50%)',
             zIndex: 30,
-            minWidth: '320px',
-            maxWidth: 'min(78vw, 760px)',
-            padding: '22px 34px',
-            borderRadius: '24px',
+            minWidth: isMobile ? '0' : '320px',
+            width: isMobile ? 'min(88vw, 420px)' : 'auto',
+            maxWidth: isMobile ? '88vw' : 'min(78vw, 760px)',
+            padding: isMobile ? '14px 18px' : '22px 34px',
+            borderRadius: isMobile ? '16px' : '24px',
             background:
               'linear-gradient(180deg, rgba(6, 10, 23, 0.76) 0%, rgba(4, 8, 19, 0.62) 100%)',
             border: '1px solid rgba(255, 255, 255, 0.14)',
@@ -1106,9 +1125,9 @@ export function GameScene() {
             backdropFilter: 'blur(22px)',
             color: 'rgba(244, 247, 255, 0.97)',
             fontFamily: '"Songti SC", "STSong", serif',
-            fontSize: '30px',
-            letterSpacing: '0.1em',
-            lineHeight: 1.45,
+            fontSize: isMobile ? '22px' : '30px',
+            letterSpacing: isMobile ? '0.06em' : '0.1em',
+            lineHeight: isMobile ? 1.38 : 1.45,
             textAlign: 'center',
             pointerEvents: 'none',
             whiteSpace: 'pre-wrap',
