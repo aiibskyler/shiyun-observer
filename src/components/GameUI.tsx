@@ -86,7 +86,7 @@ export function GameUI() {
       <div
         style={{
           position: 'fixed',
-          top: isMobile ? 'max(4px, env(safe-area-inset-top))' : '22px',
+          top: isMobile ? 'max(0px, env(safe-area-inset-top))' : '22px',
           left: '50%',
           transform: 'translateX(-50%)',
           width: isMobile ? 'calc(100vw - 20px)' : 'min(1100px, calc(100vw - 40px))',
@@ -94,7 +94,7 @@ export function GameUI() {
           alignItems: isMobile ? 'stretch' : 'center',
           justifyContent: 'space-between',
           flexDirection: isMobile ? 'column' : 'row',
-          gap: isMobile ? '6px' : '18px',
+          gap: isMobile ? '4px' : '18px',
           zIndex: 20,
           pointerEvents: isMobile ? 'auto' : 'none',
         }}
@@ -104,7 +104,7 @@ export function GameUI() {
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
-            padding: isMobile ? '10px 14px' : '12px 18px',
+            padding: isMobile ? '8px 12px' : '12px 18px',
             borderRadius: '999px',
             background: 'rgba(7, 12, 28, 0.58)',
             border: '1px solid rgba(255, 255, 255, 0.12)',
@@ -126,7 +126,7 @@ export function GameUI() {
           <span
             style={{
               color: 'rgba(240, 246, 255, 0.96)',
-              fontSize: isMobile ? '12px' : '13px',
+              fontSize: isMobile ? '11px' : '13px',
               letterSpacing: '0.12em',
               fontFamily: '"Microsoft YaHei UI", "PingFang SC", sans-serif',
             }}
@@ -140,15 +140,15 @@ export function GameUI() {
             flex: 1,
             minWidth: 0,
             width: isMobile ? '100%' : 'auto',
-            padding: isMobile ? '11px 14px' : '14px 22px',
+            padding: isMobile ? '9px 12px' : '14px 22px',
             borderRadius: '999px',
             background: 'rgba(7, 12, 28, 0.52)',
             border: '1px solid rgba(255, 255, 255, 0.08)',
             backdropFilter: 'blur(16px)',
             color: 'rgba(224, 233, 246, 0.9)',
-            fontSize: isMobile ? '12px' : '13px',
+            fontSize: isMobile ? '11px' : '13px',
             textAlign: 'center',
-            letterSpacing: isMobile ? '0.04em' : '0.08em',
+            letterSpacing: isMobile ? '0.03em' : '0.08em',
             fontFamily: '"Songti SC", "STSong", serif',
             boxShadow: '0 18px 55px rgba(0, 0, 0, 0.24)',
           }}
@@ -169,12 +169,12 @@ export function GameUI() {
             onClick={reset}
             style={{
               flex: isMobile ? 1 : 'none',
-              padding: isMobile ? '10px 14px' : '12px 18px',
+              padding: isMobile ? '8px 12px' : '12px 18px',
               borderRadius: '999px',
               border: '1px solid rgba(255, 255, 255, 0.12)',
               background: 'rgba(8, 14, 31, 0.52)',
               color: 'rgba(225, 233, 246, 0.88)',
-              fontSize: isMobile ? '12px' : '13px',
+              fontSize: isMobile ? '11px' : '13px',
               cursor: 'pointer',
               backdropFilter: 'blur(14px)',
             }}
@@ -185,12 +185,12 @@ export function GameUI() {
             onClick={endGame}
             style={{
               flex: isMobile ? 1 : 'none',
-              padding: isMobile ? '10px 14px' : '12px 18px',
+              padding: isMobile ? '8px 12px' : '12px 18px',
               borderRadius: '999px',
               border: '1px solid rgba(255, 234, 188, 0.35)',
               background: 'linear-gradient(135deg, rgba(255, 245, 214, 0.18) 0%, rgba(129, 176, 255, 0.18) 100%)',
               color: 'rgba(255, 249, 233, 0.96)',
-              fontSize: isMobile ? '12px' : '13px',
+              fontSize: isMobile ? '11px' : '13px',
               cursor: 'pointer',
               backdropFilter: 'blur(14px)',
               boxShadow: '0 12px 38px rgba(81, 122, 255, 0.18)',
@@ -204,7 +204,7 @@ export function GameUI() {
       <div
         style={{
           position: 'fixed',
-          top: isMobile ? 'max(84px, calc(env(safe-area-inset-top) + 84px))' : '86px',
+          top: isMobile ? 'max(66px, calc(env(safe-area-inset-top) + 66px))' : '86px',
           left: '50%',
           transform: 'translateX(-50%)',
           width: isMobile ? 'calc(100vw - 24px)' : 'min(560px, calc(100vw - 48px))',
