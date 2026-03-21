@@ -134,15 +134,20 @@ export function GameUI() {
     return () => window.clearInterval(timer)
   }, [])
 
+
   const generationProgress = totalSteps > 0 ? (currentStep / totalSteps) * 100 : 0
   const totalPoems = currentStep
   const clickedCount = likedPoems.length
   const llmCount = poems.filter(p => p.source === 'llm').length
   const presetCount = poems.filter(p => p.source === 'template').length
   const statusMessages = getStatusMessages(totalPoems, clickedCount, llmCount)
-  const statusSeed = totalPoems + clickedCount * 3 + llmCount * 5
-  const statusMessage = pickStatusMessage(statusMessages, statusSeed + statusTick)
+  const statusStageKey = `${clickedCount === 0 ? 'idle' : clickedCount < 3 ? 'awakening' : llmCount > 0 && clickedCount < 6 ? 'learning' : totalPoems > 18 && clickedCount > 6 ? 'shaping' : 'drifting'}-${statusMessages.length}`
+  const statusMessage = statusMessages[statusTick % statusMessages.length] ?? ''
   const driftProgress = getDriftProgress(totalPoems, clickedCount)
+
+  useEffect(() => {
+    setStatusTick(0)
+  }, [statusStageKey])
 
   return (
     <>
