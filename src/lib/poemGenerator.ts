@@ -1,4 +1,4 @@
-import type { GamePoemNode, LLMConfig } from '../types/game'
+Ôªøimport type { GamePoemNode, LLMConfig } from '../types/game'
 import { streamLLM } from './llm'
 import { getPresetPoem, shouldUseLLM } from './presetContent'
 
@@ -19,18 +19,18 @@ const LLM_BATCH_SIZE = 4
 function normalizePoemText(text: string): string {
   return text
     .replace(/```[\s\S]*?```/g, '')
-    .replace(/[""'`°∞°±°Æ°Ø°∂°∑°æ°ø]/g, '')
-    .replace(/^\s*( ´æ‰|¥∞∏| ‰≥ˆ|’˝Œƒ)\s*[:£∫]\s*/gm, '')
-    .replace(/^\s*(…œ¡™|œ¬¡™|∆‰“ª|∆‰∂˛)\s*[:£∫]\s*/gm, '')
-    .replace(/^\s*[-*?\d.]+\s*/gm, '')
+    .replace(/["'`‚Äú‚Äù‚Äò‚Äô„Ää„Äã„Äê„Äë]/g, '')
+    .replace(/^\s*(ËØóÂè•|Á≠îÊ°à|ËæìÂá∫|Ê≠£Êñá)\s*[:Ôºö]\s*/gm, '')
+    .replace(/^\s*(‰∏äËÅî|‰∏ãËÅî|ÂÖ∂‰∏Ä|ÂÖ∂‰∫å)\s*[:Ôºö]\s*/gm, '')
+    .replace(/^\s*[-*‚Ä¢\d.]+\s*/gm, '')
     .replace(/\r/g, '')
     .trim()
 }
 
 function cleanPoemSegment(text: string): string {
   return text
-    .replace(/[°££°£ø£ª;,.!?°¢]+$/g, '')
-    .replace(/[()£®£©]/g, '')
+    .replace(/[„ÄÇÔºÅÔºüÔºõ;,.!?„ÄÅ]+$/g, '')
+    .replace(/[()ÔºàÔºâ]/g, '')
     .trim()
 }
 
@@ -42,7 +42,7 @@ function trySplitSingleLineCouplet(text: string): string[] {
   }
 
   const explicitSegments = cleaned
-    .split(/[£¨£ª°£]/)
+    .split(/[ÔºåÔºõ„ÄÇ]/)
     .map(segment => cleanPoemSegment(segment))
     .filter(Boolean)
 
@@ -50,7 +50,7 @@ function trySplitSingleLineCouplet(text: string): string[] {
     return explicitSegments.slice(0, 2)
   }
 
-  const compact = cleaned.replace(/[£¨°££°£ø£ª°¢\s]/g, '')
+  const compact = cleaned.replace(/[Ôºå„ÄÇÔºÅÔºüÔºõ„ÄÅ\s]/g, '')
   const length = compact.length
 
   if (length < 8 || length > 20) {
@@ -87,7 +87,7 @@ function splitCoupletCandidates(raw: string): string[] {
   }
 
   const inlineSegments = normalized
-    .split(/[£¨£ª,]/)
+    .split(/[ÔºåÔºõ,]/)
     .map(segment => cleanPoemSegment(segment))
     .filter(Boolean)
 
@@ -107,23 +107,23 @@ function isPoeticLine(text: string): boolean {
     return false
   }
 
-  const compact = text.replace(/[£¨°££°£ø£ª°¢\s]/g, '')
+  const compact = text.replace(/[Ôºå„ÄÇÔºÅÔºüÔºõ„ÄÅ\s]/g, '')
   const length = compact.length
   const bannedPhrases = [
-    ' ´æ‰',
-    'Ω‚ Õ',
-    '”√ªß',
-    'µ„ª˜',
-    '…˙≥…',
-    ' ‰≥ˆ',
-    '¥∞∏',
-    'œ≤ª∂',
-    '“‚“Â «',
-    '»À…˙',
-    'Œ“√«“™',
+    'ËØóÂè•',
+    'Ëß£Èáä',
+    'Áî®Êà∑',
+    'ÁÇπÂáª',
+    'ÁîüÊàê',
+    'ËæìÂá∫',
+    'Á≠îÊ°à',
+    'ÂñúÊ¨¢',
+    'ÊÑè‰πâÊòØ',
+    '‰∫∫Áîü',
+    'Êàë‰ª¨Ë¶Å',
   ]
 
-  if (!/^[\u4e00-\u9fa5£¨°££°£ø£ª°¢\s]+$/.test(text)) {
+  if (!/^[\u4e00-\u9fa5Ôºå„ÄÇÔºÅÔºüÔºõ„ÄÅ\s]+$/.test(text)) {
     return false
   }
 
@@ -147,7 +147,7 @@ function isPoeticCouplet(lines: string[]): boolean {
     return false
   }
 
-  const lengths = lines.map(line => line.replace(/[£¨°££°£ø£ª°¢\s]/g, '').length)
+  const lengths = lines.map(line => line.replace(/[Ôºå„ÄÇÔºÅÔºüÔºõ„ÄÅ\s]/g, '').length)
   return Math.abs(lengths[0] - lengths[1]) <= 2
 }
 
@@ -167,19 +167,23 @@ function generateBatchPoemPrompt(context: {
   batchSize: number
 }): string {
   const sections = [
-    `«Î“ª¥Œ…˙≥… ${context.batchSize} ◊È÷–Œƒ∂Ã¡™°£`,
-    '√ø◊È±ÿ–Î—œ∏Ò ‰≥ˆŒ™“ª––£∫µ⁄N◊È|…œæ‰|œ¬æ‰',
-    '≥˝Ω·π˚––÷ÆÕ‚£¨≤ª“™ ‰≥ˆ»Œ∫ŒÀµ√˜°¢±ÍÃ‚°¢Ω‚ ÕªÚ markdown°£',
-    '√øæ‰ 4-8 ∏ˆ∫∫◊÷£¨∑Á∏Ò¿‰æ≤°¢∫¨–Ó°¢æﬂœÛ°£',
+    `ËØ∑‰∏ÄÊ¨°ÁîüÊàê ${context.batchSize} ÁªÑ‰∏≠ÊñáÁü≠ËÅî„ÄÇ`,
+    'ÊØèÁªÑÂøÖÈ°ª‰∏•Ê†ºËæìÂá∫‰∏∫‰∏ÄË°åÔºöÁ¨¨NÁªÑ|‰∏äÂè•|‰∏ãÂè•',
+    '‰∏äÂè•Âíå‰∏ãÂè•ÈÉΩÂøÖÈ°ªÊòØÂÆåÊï¥Áü≠Âè•ÔºåÊØèÂè• 4-8 ‰∏™Ê±âÂ≠ó„ÄÇ',
+    '‰∏çË¶ÅÊääÂçï‰∏™ÊÑèË±°ËØçÊãÜÊàê‰∏âÊÆµÔºå‰∏çË¶ÅËæìÂá∫‚ÄúÊúà|Á™óÂâç|ÁÖß‚ÄùËøôÁßçÊ†ºÂºè„ÄÇ',
+    'Ê≠£Á°ÆÁ§∫‰æãÔºöÁ¨¨1ÁªÑ|ÊúàÊ≤âËçíÊ∏°Âè£|ÁÅØÁÖßÊú™ÂΩíËàü',
+    'Ê≠£Á°ÆÁ§∫‰æãÔºöÁ¨¨2ÁªÑ|È£éÂÅúÊùæÂ≠êËêΩ|Â§ú‰πÖÁü≥Ê≥âÊ∏©',
+    'Èô§ÁªìÊûúË°å‰πãÂ§ñÔºå‰∏çË¶ÅËæìÂá∫‰ªª‰ΩïËØ¥Êòé„ÄÅÊ†áÈ¢ò„ÄÅËß£Èáä„ÄÅÊÄùÁª¥ËøáÁ®ãÊàñ markdown„ÄÇ',
+    'È£éÊ†ºË¶ÅÂÜ∑Èùô„ÄÅÂê´ËìÑ„ÄÅÂÖ∑Ë±°„ÄÇ',
   ]
 
   if (context.clickedPoems.length > 0) {
-    sections.push('≤Œøº”√ªß∆´∫√£∫')
+    sections.push('ÂèÇËÄÉÁî®Êà∑ÂÅèÂ•ΩÔºö')
     sections.push(context.clickedPoems.join('\n'))
   }
 
   if (context.avoidPoems && context.avoidPoems.length > 0) {
-    sections.push('±‹√‚÷ÿ∏¥£∫')
+    sections.push('ÈÅøÂÖçÈáçÂ§çÔºö')
     sections.push(context.avoidPoems.slice(0, 12).join('\n'))
   }
 
@@ -188,10 +192,11 @@ function generateBatchPoemPrompt(context: {
 
 function generateBatchPoemSystemPrompt(): string {
   return [
-    'ƒ„ «°∞ ´‘∆°±–¥◊˜“˝«Ê°£',
-    'µ±”√ªß“™«Û∂‡◊È∂Ã¡™ ±£¨±ÿ–Î—œ∏Ò÷–– ‰≥ˆ£∫µ⁄N◊È|…œæ‰|œ¬æ‰',
-    '≤ª“™ ‰≥ˆ»Œ∫Œ∂ÓÕ‚Œƒ±æ°£',
-    '…œœ¬æ‰∂º±ÿ–Î «◊‘»ªµƒ÷–Œƒ ´–‘∂Ãæ‰£¨√øæ‰ 4-8 ∏ˆ∫∫◊÷°£',
+    '‰Ω†ÊòØ‚ÄúËØó‰∫ë‚ÄùÂÜô‰ΩúÂºïÊìé„ÄÇ',
+    'ÂΩìÁî®Êà∑Ë¶ÅÊ±ÇÂ§öÁªÑÁü≠ËÅîÊó∂ÔºåÂøÖÈ°ª‰∏•Ê†ºÈÄêË°åËæìÂá∫ÔºöÁ¨¨NÁªÑ|‰∏äÂè•|‰∏ãÂè•„ÄÇ',
+    '‰∏äÂè•Âíå‰∏ãÂè•ÂøÖÈ°ªÈÉΩÊòØÂÆåÊï¥Áü≠Âè•Ôºå‰∏çËÉΩÊãÜÊàêÊÑèË±°ËØç„ÄÅÂú∞ÁÇπËØç„ÄÅÂä®‰ΩúËØç‰∏âÊÆµ„ÄÇ',
+    '‰∏çË¶ÅËæìÂá∫‰ªª‰ΩïÈ¢ùÂ§ñÊñáÊú¨„ÄÇ',
+    '‰∏ä‰∏ãÂè•ÈÉΩÂøÖÈ°ªÊòØËá™ÁÑ∂ÁöÑ‰∏≠ÊñáËØóÊÄßÁü≠Âè•ÔºåÊØèÂè• 4-8 ‰∏™Ê±âÂ≠ó„ÄÇ',
   ].join('\n')
 }
 
@@ -205,17 +210,35 @@ function extractBatchPoeticCouplets(raw: string): string[] {
   const poems: string[] = []
 
   for (const line of lines) {
-    const match = line.match(/^µ⁄?\s*\d+\s*◊È?\s*[|£¸](.+?)[|£¸](.+)$/)
-    if (!match) {
+    const segments = line
+      .split(/[|ÔΩú]/)
+      .map(segment => cleanPoemSegment(segment))
+      .filter(Boolean)
+
+    if (segments.length < 2) {
       continue
     }
 
-    const left = cleanPoemSegment(match[1])
-    const right = cleanPoemSegment(match[2])
-    const poem = extractPoeticCouplet(`${left}\n${right}`)
+    const candidatePairs: Array<[string, string]> = []
 
-    if (poem) {
-      poems.push(poem)
+    if (segments.length >= 3) {
+      const maybeIndex = segments[0]
+      if (/^Á¨¨?\d+ÁªÑ?$/.test(maybeIndex)) {
+        candidatePairs.push([segments[1], segments[2]])
+      } else {
+        candidatePairs.push([segments[0], segments[1]])
+        candidatePairs.push([segments[1], segments[2]])
+      }
+    } else {
+      candidatePairs.push([segments[0], segments[1]])
+    }
+
+    for (const [left, right] of candidatePairs) {
+      const poem = extractPoeticCouplet(`${left}\n${right}`)
+      if (poem) {
+        poems.push(poem)
+        break
+      }
     }
   }
 
@@ -278,7 +301,7 @@ export class PoemGenerator {
 
         const poems = extractBatchPoeticCouplets(responseText)
         if (poems.length === 0) {
-          throw new Error('LLM batch response did not contain any valid poem lines')
+          throw new Error(`LLM batch response did not contain valid couplets: ${responseText}`)
         }
 
         this.llmBatchBuffer.push(...poems)
