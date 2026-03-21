@@ -520,33 +520,33 @@ export function GameScene() {
         )
 
     const core = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(isLLMSource ? 1.18 : 1.05, 1),
+      new THREE.IcosahedronGeometry(isLLMSource ? 1.28 : 1.05, 1),
       new THREE.MeshStandardMaterial({
-        color: baseColor.clone().multiplyScalar(isLLMSource ? 0.34 : 0.2),
-        roughness: isLLMSource ? 0.16 : 0.22,
-        metalness: isLLMSource ? 0.88 : 0.78,
+        color: baseColor.clone().multiplyScalar(isLLMSource ? 0.42 : 0.2),
+        roughness: isLLMSource ? 0.12 : 0.22,
+        metalness: isLLMSource ? 0.94 : 0.78,
         transparent: true,
         opacity: 0,
       })
     )
 
     const aura = new THREE.Mesh(
-      new THREE.SphereGeometry(isLLMSource ? 2.18 : 1.95, 26, 26),
+      new THREE.SphereGeometry(isLLMSource ? 2.48 : 1.95, 26, 26),
       new THREE.MeshBasicMaterial({
         color: isLLMSource
-          ? new THREE.Color(0xffefcb)
+          ? new THREE.Color(0xfff2d6)
           : baseColor.clone().offsetHSL(0, 0.12, 0.16),
         transparent: true,
-        opacity: isLLMSource ? 0.11 : 0.05,
+        opacity: isLLMSource ? 0.16 : 0.05,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       })
     )
 
     const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(2.35, 0.075, 12, 48),
+      new THREE.TorusGeometry(isLLMSource ? 2.62 : 2.35, isLLMSource ? 0.11 : 0.075, 12, 48),
       new THREE.MeshBasicMaterial({
-        color: 0xcde8ff,
+        color: isLLMSource ? 0xffefbf : 0xcde8ff,
         transparent: true,
         opacity: 0,
         blending: THREE.AdditiveBlending,
@@ -555,11 +555,11 @@ export function GameScene() {
     )
 
     const haloRing = new THREE.Mesh(
-      new THREE.TorusGeometry(isLLMSource ? 2.9 : 2.65, isLLMSource ? 0.05 : 0.036, 12, 56),
+      new THREE.TorusGeometry(isLLMSource ? 3.18 : 2.65, isLLMSource ? 0.075 : 0.036, 12, 56),
       new THREE.MeshBasicMaterial({
-        color: isLLMSource ? 0xfff1cc : 0xbddfff,
+        color: isLLMSource ? 0xfff6dd : 0xbddfff,
         transparent: true,
-        opacity: isLLMSource ? 0.22 : 0,
+        opacity: isLLMSource ? 0.3 : 0,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       })
@@ -667,7 +667,10 @@ export function GameScene() {
       const driftX = Math.sin(now * userData.driftSpeed + userData.driftPhase) * 0.9
       const driftY = Math.cos(now * userData.driftSpeed * 1.2 + userData.driftPhase) * 0.75
       const driftZ = Math.sin(now * userData.driftSpeed * 0.8 + userData.rotationOffset) * 0.6
-      const displayScale = isHovered ? poem.scale * 1.55 : poem.clicked ? poem.scale * 1.2 : poem.scale
+      const llmPulse = isLLMSource ? 1 + Math.sin(now * 0.004 + userData.rotationOffset) * 0.06 : 1
+      const displayScale = (
+        isHovered ? poem.scale * 1.55 : poem.clicked ? poem.scale * 1.2 : poem.scale
+      ) * llmPulse
 
       group.scale.setScalar(displayScale)
       group.position.set(
@@ -685,7 +688,7 @@ export function GameScene() {
 
       coreMaterial.color
         .copy(userData.baseColor)
-        .multiplyScalar((isLLMSource ? 0.26 : 0.15) + spawnBrightness * (isLLMSource ? 0.98 : 0.85))
+        .multiplyScalar((isLLMSource ? 0.36 : 0.15) + spawnBrightness * (isLLMSource ? 1.16 : 0.85))
       coreMaterial.opacity = poem.opacity
       coreMaterial.transparent = true
       coreMaterial.emissive = new THREE.Color(0, 0, 0)
@@ -701,19 +704,28 @@ export function GameScene() {
       auraMaterial.opacity =
         poem.opacity *
         spawnBrightness *
-        (isHovered ? (isLLMSource ? 0.52 : 0.38) : poem.clicked ? 0.26 : isLLMSource ? 0.24 : 0.14)
+        (isHovered ? (isLLMSource ? 0.7 : 0.38) : poem.clicked ? 0.26 : isLLMSource ? 0.34 : 0.14)
 
       ringMaterial.color = poem.clicked
         ? new THREE.Color(0xffe2a1)
         : isLLMSource
-          ? new THREE.Color(0xfff0c8)
+          ? new THREE.Color(0xfff4d0)
           : new THREE.Color(0xc6e2ff)
-      ringMaterial.opacity = isHovered ? poem.opacity * (isLLMSource ? 0.62 : 0.45) : isLLMSource ? poem.opacity * 0.16 : 0
-      haloRingMaterial.color = isLLMSource ? new THREE.Color(0xfff3d8) : new THREE.Color(0xc6e2ff)
-      haloRingMaterial.opacity = poem.opacity * (isHovered ? (isLLMSource ? 0.42 : 0.12) : isLLMSource ? 0.24 : 0)
-      userData.aura.scale.setScalar(isHovered ? (isLLMSource ? 1.4 : 1.28) : poem.clicked ? 1.16 : isLLMSource ? 1.12 : 1)
-      userData.haloRing.scale.setScalar(isHovered ? (isLLMSource ? 1.18 : 1.04) : isLLMSource ? 1.08 : 1)
-      userData.haloRing.rotation.z = now * (isLLMSource ? 0.00042 : 0.0002) + userData.rotationOffset
+      ringMaterial.opacity = isHovered
+        ? poem.opacity * (isLLMSource ? 0.8 : 0.45)
+        : isLLMSource
+          ? poem.opacity * (0.28 + Math.sin(now * 0.0036 + userData.driftPhase) * 0.06)
+          : 0
+      haloRingMaterial.color = isLLMSource ? new THREE.Color(0xfff7e4) : new THREE.Color(0xc6e2ff)
+      haloRingMaterial.opacity = poem.opacity *
+        (isHovered ? (isLLMSource ? 0.58 : 0.12) : isLLMSource ? 0.38 + Math.sin(now * 0.0028 + userData.rotationOffset) * 0.07 : 0)
+      userData.aura.scale.setScalar(
+        isHovered ? (isLLMSource ? 1.56 : 1.28) : poem.clicked ? 1.16 : isLLMSource ? 1.22 + Math.sin(now * 0.003 + userData.driftPhase) * 0.04 : 1
+      )
+      userData.haloRing.scale.setScalar(
+        isHovered ? (isLLMSource ? 1.28 : 1.04) : isLLMSource ? 1.16 + Math.sin(now * 0.0026 + userData.rotationOffset) * 0.05 : 1
+      )
+      userData.haloRing.rotation.z = now * (isLLMSource ? 0.00072 : 0.0002) + userData.rotationOffset
 
       const shouldGlow = isHovered || poem.clicked || poem.lifecycle === 'spawning' || poem.lifecycle === 'fading'
       if (shouldGlow) {
@@ -735,8 +747,8 @@ export function GameScene() {
 
         coreMaterial.emissiveIntensity = glowIntensity * lifecycleBoost * (isLLMSource ? 1.24 : 1)
       } else if (isLLMSource) {
-        coreMaterial.emissive = new THREE.Color(0xffefc8)
-        coreMaterial.emissiveIntensity = 0.22 + Math.sin(now * 0.0032 + userData.driftPhase) * 0.08
+        coreMaterial.emissive = new THREE.Color(0xfff1cc)
+        coreMaterial.emissiveIntensity = 0.42 + Math.sin(now * 0.0032 + userData.driftPhase) * 0.12
       }
 
       if (clickBurstProgress !== null && clickBurstProgress < 1) {

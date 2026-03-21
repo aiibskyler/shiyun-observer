@@ -15,6 +15,7 @@ const FAILURE_COOLDOWN = 12000
 let lastLLMRequestTime = 0
 const REQUEST_COOLDOWN = 3000
 const LLM_BATCH_SIZE = 8
+const LLM_BATCH_CONCURRENCY = 2
 
 function normalizePoemText(text: string): string {
   return text
@@ -277,34 +278,47 @@ export class PoemGenerator {
     this.llmConfig = llmConfig
   }
 
+  private async fetchSingleLLMBatch(context: {
+    clickedPoems: string[]
+    avoidPoems: string[]
+  }): Promise<string[]> {
+    let responseText = ''
+    const prompt = generateBatchPoemPrompt({
+      clickedPoems: context.clickedPoems,
+      avoidPoems: context.avoidPoems,
+      batchSize: LLM_BATCH_SIZE,
+    })
+
+    for await (const chunk of streamLLM(this.llmConfig, {
+      prompt,
+      systemPrompt: generateBatchPoemSystemPrompt(),
+      maxTokens: 8192,
+      temperature: 0.95,
+    })) {
+      responseText += chunk
+    }
+
+    const poems = extractBatchPoeticCouplets(responseText)
+    if (poems.length === 0) {
+      throw new Error(`LLM batch response did not contain valid couplets: ${responseText}`)
+    }
+
+    return poems
+  }
+
   private async requestLLMBatch(context: {
     clickedPoems: string[]
     avoidPoems: string[]
   }): Promise<void> {
     if (!this.llmBatchPromise) {
       this.llmBatchPromise = (async () => {
-        let responseText = ''
-        const prompt = generateBatchPoemPrompt({
-          clickedPoems: context.clickedPoems,
-          avoidPoems: context.avoidPoems,
-          batchSize: LLM_BATCH_SIZE,
-        })
+        const poemGroups = await Promise.all(
+          Array.from({ length: LLM_BATCH_CONCURRENCY }, () =>
+            this.fetchSingleLLMBatch(context)
+          )
+        )
 
-        for await (const chunk of streamLLM(this.llmConfig, {
-          prompt,
-          systemPrompt: generateBatchPoemSystemPrompt(),
-          maxTokens: 8192,
-          temperature: 0.95,
-        })) {
-          responseText += chunk
-        }
-
-        const poems = extractBatchPoeticCouplets(responseText)
-        if (poems.length === 0) {
-          throw new Error(`LLM batch response did not contain valid couplets: ${responseText}`)
-        }
-
-        this.llmBatchBuffer.push(...poems)
+        this.llmBatchBuffer.push(...poemGroups.flat())
       })().finally(() => {
         this.llmBatchPromise = null
       })

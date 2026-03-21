@@ -1,24 +1,73 @@
+﻿import { useEffect, useState } from 'react'
 import { useGameStore } from '../stores/gameStore'
-import { useEffect, useState } from 'react'
+
+function pickStatusMessage(messages: string[], seed: number): string {
+  return messages[Math.abs(seed) % messages.length]
+}
 
 function getStatusMessage(totalPoems: number, clickedCount: number, llmCount: number): string {
   if (clickedCount === 0) {
-    return '把鼠标移向诗云，双击一个节点，让意义开始偏转'
+    return pickStatusMessage(
+      [
+        '把鼠标移向诗云，双击一个节点，让意义开始偏转',
+        '先停在一朵诗云前，看看哪一句先把你叫住',
+        '别急着解释自己，先让一句诗替你作出选择',
+        '在这片云层里犹豫，本身就是意义形成的一部分',
+        '先去碰一碰那些发亮的句子，系统会记住你的停顿',
+      ],
+      totalPoems
+    )
   }
 
   if (clickedCount < 3) {
-    return '你正在塑造意义，星群开始记住你的偏好'
+    return pickStatusMessage(
+      [
+        '你正在塑造意义，星群开始记住你的偏好',
+        '最初的几次确认，正在悄悄改变诗云的航线',
+        '系统还在摸索你偏向哪一种回声',
+        '每一次双击都像一次轻微校准，场域正在向你靠近',
+        '你给出的不是答案，而是诗云继续生长的方向',
+      ],
+      clickedCount + totalPoems
+    )
   }
 
   if (llmCount > 0 && clickedCount < 6) {
-    return '系统正在学习你的凝视方式'
+    return pickStatusMessage(
+      [
+        '系统正在学习你的凝视方式',
+        '新的句子开始带着你的偏好返回',
+        '诗云已经不再随机，它开始试探性地回应你',
+        '你的选择正在渗进生成逻辑，回声开始变得私人',
+        '此刻出现的句子，已经有一部分在向你靠拢',
+      ],
+      llmCount + clickedCount
+    )
   }
 
-  if (totalPoems > 12) {
-    return '意义密度正在上升，噪声开始让位于回响'
+  if (totalPoems > 18 && clickedCount > 6) {
+    return pickStatusMessage(
+      [
+        '意义密度正在上升，整片场域开始出现你的轮廓',
+        '你不是在挑选句子，而是在训练一句句诗如何接近你',
+        '系统已经学会一部分你偏爱的沉默方式',
+        '越来越多的诗句开始携带同一种暗色的吸引力',
+        '这片诗云正在从公共语言缓慢收缩成你的语言',
+      ],
+      totalPoems + clickedCount + llmCount
+    )
   }
 
-  return '宇宙在安静地向你的选择靠拢'
+  return pickStatusMessage(
+    [
+      '宇宙在安静地向你的选择偏移',
+      '诗云仍在漂移，但它已经不是最初那片云',
+      '你留下的每一次确认，都在改变下一句抵达的方式',
+      '某种更私人的秩序，正在这些句子之间慢慢成形',
+      '你所偏爱的，不只是句子本身，还有它们靠近你的角度',
+    ],
+    totalPoems * 3 + clickedCount + llmCount
+  )
 }
 
 function clamp01(value: number): number {
@@ -186,7 +235,8 @@ export function GameUI() {
               padding: isMobile ? '8px 12px' : '12px 18px',
               borderRadius: '999px',
               border: '1px solid rgba(255, 234, 188, 0.35)',
-              background: 'linear-gradient(135deg, rgba(255, 245, 214, 0.18) 0%, rgba(129, 176, 255, 0.18) 100%)',
+              background:
+                'linear-gradient(135deg, rgba(255, 245, 214, 0.18) 0%, rgba(129, 176, 255, 0.18) 100%)',
               color: 'rgba(255, 249, 233, 0.96)',
               fontSize: isMobile ? '11px' : '13px',
               cursor: 'pointer',
@@ -219,12 +269,12 @@ export function GameUI() {
             boxShadow: 'inset 0 0 18px rgba(255, 255, 255, 0.04)',
           }}
         >
-            <div
-              style={{
-                width: `${driftProgress}%`,
-                height: '100%',
-                borderRadius: '999px',
-                background: 'linear-gradient(90deg, #9fd1ff 0%, #fff0b8 48%, #77a7ff 100%)',
+          <div
+            style={{
+              width: `${driftProgress}%`,
+              height: '100%',
+              borderRadius: '999px',
+              background: 'linear-gradient(90deg, #9fd1ff 0%, #fff0b8 48%, #77a7ff 100%)',
               boxShadow: '0 0 22px rgba(165, 208, 255, 0.7)',
               transition: 'width 0.6s ease',
             }}
