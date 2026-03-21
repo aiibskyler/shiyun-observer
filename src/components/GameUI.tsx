@@ -86,7 +86,7 @@ export function GameUI() {
       <div
         style={{
           position: 'fixed',
-          top: isMobile ? 'max(10px, env(safe-area-inset-top))' : '22px',
+          top: isMobile ? 'max(4px, env(safe-area-inset-top))' : '22px',
           left: '50%',
           transform: 'translateX(-50%)',
           width: isMobile ? 'calc(100vw - 20px)' : 'min(1100px, calc(100vw - 40px))',
@@ -94,7 +94,7 @@ export function GameUI() {
           alignItems: isMobile ? 'stretch' : 'center',
           justifyContent: 'space-between',
           flexDirection: isMobile ? 'column' : 'row',
-          gap: isMobile ? '8px' : '18px',
+          gap: isMobile ? '6px' : '18px',
           zIndex: 20,
           pointerEvents: isMobile ? 'auto' : 'none',
         }}
@@ -204,7 +204,7 @@ export function GameUI() {
       <div
         style={{
           position: 'fixed',
-          top: isMobile ? 'max(116px, calc(env(safe-area-inset-top) + 116px))' : '86px',
+          top: isMobile ? 'max(84px, calc(env(safe-area-inset-top) + 84px))' : '86px',
           left: '50%',
           transform: 'translateX(-50%)',
           width: isMobile ? 'calc(100vw - 24px)' : 'min(560px, calc(100vw - 48px))',
