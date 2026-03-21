@@ -130,7 +130,8 @@ export function GameUI() {
     return () => window.clearInterval(timer)
   }, [])
 
-  const generationProgress = totalSteps > 0 ? (currentStep / totalSteps) * 100 : 0
+  const generationProgress =
+    totalSteps > 0 ? Math.min((currentStep / totalSteps) * 100, 100) : 0
   const totalPoems = currentStep
   const clickedCount = likedPoems.length
   const llmCount = poems.filter(p => p.source === 'llm').length

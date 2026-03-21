@@ -81,7 +81,7 @@ export const useGameStore = create<GameStore>(set => ({
   addPoem: poem =>
     set(state => ({
       poems: [...state.poems, poem],
-      currentStep: Math.min(state.currentStep + 1, state.totalSteps),
+      currentStep: state.currentStep + 1,
     })),
 
   // 更新诗句
