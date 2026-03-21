@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { LikedPoemRecord } from '../types/game'
 import { useGameStore } from '../stores/gameStore'
 import {
   streamLLM,
@@ -59,7 +60,7 @@ function drawWrappedText(
 }
 
 async function buildShareImage(options: {
-  likedPoems: string[]
+  likedPoemRecords: LikedPoemRecord[]
   insight: string
   totalGenerated: number
   totalLiked: number
@@ -79,9 +80,15 @@ async function buildShareImage(options: {
   const insightLineHeight = 44
 
   const likedText =
-    options.likedPoems.length > 0
-      ? options.likedPoems
-          .map((poem, index) => `${index + 1}. ${formatDisplayedPoem(poem)}`)
+    options.likedPoemRecords.length > 0
+      ? options.likedPoemRecords
+          .map((poem, index) => {
+            const attribution =
+              poem.author || poem.title
+                ? `\n   ${poem.author ?? ''}${poem.author && poem.title ? '《' : ''}${poem.title ?? ''}${poem.title ? '》' : ''}`
+                : ''
+            return `${index + 1}. ${formatDisplayedPoem(poem.text)}${attribution}`
+          })
           .join('\n')
       : '\u8fd9\u4e00\u8f6e\u4f60\u8fd8\u6ca1\u6709\u786e\u8ba4\u559c\u6b22\u7684\u8bd7\u53e5\u3002'
 
@@ -218,6 +225,7 @@ export function AnalysisPage() {
     llmConfig,
     poems,
     likedPoems,
+    likedPoemRecords,
     currentStep,
     currentInsight,
     updateCurrentInsight,
@@ -329,7 +337,7 @@ export function AnalysisPage() {
     try {
       setIsSavingImage(true)
       const blob = await buildShareImage({
-        likedPoems,
+        likedPoemRecords,
         insight: currentInsight,
         totalGenerated,
         totalLiked: likedPoems.length,
@@ -481,9 +489,9 @@ export function AnalysisPage() {
                   paddingRight: '4px',
                 }}
               >
-                {likedPoems.map((poem, index) => (
+                {likedPoemRecords.map((poem, index) => (
                   <div
-                    key={`${poem}-${index}`}
+                    key={`${poem.text}-${index}`}
                     style={{
                       display: 'flex',
                       alignItems: 'flex-start',
@@ -512,7 +520,33 @@ export function AnalysisPage() {
                         whiteSpace: 'normal',
                       }}
                     >
-                      {formatDisplayedPoem(poem)}
+                      <div>
+                        <div
+                          style={{
+                            color: 'rgba(255, 255, 255, 0.9)',
+                            fontSize: '15px',
+                            lineHeight: 1.8,
+                            whiteSpace: 'normal',
+                          }}
+                        >
+                          {formatDisplayedPoem(poem.text)}
+                        </div>
+                        {(poem.author || poem.title) && (
+                          <div
+                            style={{
+                              marginTop: '4px',
+                              color: 'rgba(199, 216, 255, 0.64)',
+                              fontSize: '12px',
+                              lineHeight: 1.6,
+                            }}
+                          >
+                            {poem.author ?? ''}
+                            {poem.author && poem.title ? '《' : ''}
+                            {poem.title ?? ''}
+                            {poem.title ? '》' : ''}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}

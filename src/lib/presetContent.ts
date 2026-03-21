@@ -3,9 +3,10 @@
  * 仅保留从 chinese-poetry 提取出的古典诗句
  */
 
-import { classicalPoemLines } from './generatedClassicalPoems'
+import { classicalPoemEntries } from './generatedClassicalPoems'
 
-const archivalPoems = [...classicalPoemLines]
+const archivalPoemEntries = [...classicalPoemEntries]
+const archivalPoems = archivalPoemEntries.map(entry => entry.text)
 
 function pick<T>(items: readonly T[]): T {
   return items[Math.floor(Math.random() * items.length)]
@@ -56,6 +57,24 @@ function getResonantPoems(clickedPoems: string[] = [], avoidPoems: string[] = []
 
     return hints.some(hint => normalizedPoem.includes(hint))
   })
+}
+
+export function findPresetPoemMetadata(
+  text: string
+): { author?: string; title?: string } | null {
+  const normalizedText = normalizePoem(text)
+  const match = archivalPoemEntries.find(
+    entry => normalizePoem(entry.text) === normalizedText
+  )
+
+  if (!match) {
+    return null
+  }
+
+  return {
+    author: match.author || undefined,
+    title: match.title || undefined,
+  }
 }
 
 export function getPresetPoem(

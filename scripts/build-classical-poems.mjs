@@ -114,7 +114,14 @@ function collectFromNode(node, bucket) {
 
         const normalized = normalizeLine(line)
         if (isValidLine(normalized)) {
-          bucket.add(normalized)
+          const bucketKey = normalizeLine(normalized)
+          if (!bucket.has(bucketKey)) {
+            bucket.set(bucketKey, {
+              text: normalized,
+              author: typeof node.author === 'string' ? normalizeLine(node.author) : '',
+              title: typeof node.title === 'string' ? normalizeLine(node.title) : '',
+            })
+          }
         }
       }
     }
@@ -159,7 +166,7 @@ async function walkJsonFiles(directory) {
 async function main() {
   await ensureSourceRoot()
 
-  const collectedLines = new Set()
+  const collectedEntries = new Map()
 
   for (const relativeDir of SOURCE_DIRECTORIES) {
     const absoluteDir = path.join(SOURCE_ROOT, relativeDir)
@@ -169,27 +176,28 @@ async function main() {
       try {
         const raw = await fs.readFile(jsonFile, 'utf8')
         const parsed = JSON.parse(raw)
-        collectFromNode(parsed, collectedLines)
+        collectFromNode(parsed, collectedEntries)
       } catch (error) {
         console.warn(`[build-classical-poems] skipped ${jsonFile}: ${String(error)}`)
       }
     }
   }
 
-  const selectedLines = [...collectedLines]
-    .sort((left, right) => hashText(left) - hashText(right))
+  const selectedEntries = [...collectedEntries.values()]
+    .sort((left, right) => hashText(left.text) - hashText(right.text))
     .slice(0, MAX_LINES)
 
   const content = `/**
  * Auto-generated from local chinese-poetry sources.
  * Run \`npm run build:poetry\` to refresh this file.
  */
-export const classicalPoemLines = ${JSON.stringify(selectedLines, null, 2)} as const
+export const classicalPoemEntries = ${JSON.stringify(selectedEntries, null, 2)} as const
+export const classicalPoemLines = classicalPoemEntries.map(entry => entry.text)
 `
 
   await fs.writeFile(OUTPUT_FILE, content, 'utf8')
 
-  console.log(`[build-classical-poems] wrote ${selectedLines.length} lines to ${path.relative(projectRoot, OUTPUT_FILE)}`)
+  console.log(`[build-classical-poems] wrote ${selectedEntries.length} lines to ${path.relative(projectRoot, OUTPUT_FILE)}`)
 }
 
 main().catch(error => {

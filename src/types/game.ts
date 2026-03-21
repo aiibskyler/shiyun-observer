@@ -19,6 +19,8 @@ export type PoemLifecycle = 'spawning' | 'displaying' | 'fading' | 'dead'
 export type GamePoemNode = {
   id: string
   text: string
+  author?: string
+  title?: string
   position: { x: number; y: number; z: number }
 
   // 生命周期
@@ -38,6 +40,11 @@ export type GamePoemNode = {
   opacity: number
   color: { r: number; g: number; b: number }
 }
+
+export type LikedPoemRecord = Pick<
+  GamePoemNode,
+  'text' | 'author' | 'title' | 'source'
+>
 
 /**
  * LLM 配置

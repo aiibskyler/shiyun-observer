@@ -1,6 +1,11 @@
 ﻿import type { GamePoemNode, LLMConfig } from '../types/game'
+import { classicalPoemEntries } from './generatedClassicalPoems'
 import { streamLLM } from './llm'
-import { getPresetPoem, shouldUseLLM } from './presetContent'
+import {
+  findPresetPoemMetadata,
+  getPresetPoem,
+  shouldUseLLM,
+} from './presetContent'
 
 const CONFIG = {
   spawnInterval: 5000,
@@ -17,6 +22,22 @@ const REQUEST_COOLDOWN = 3000
 const LLM_BATCH_SIZE = 8
 const LLM_BATCH_CONCURRENCY = 2
 
+type LLMBatchPoem = {
+  text: string
+  title?: string
+}
+
+const DEFAULT_ARCHIVAL_INSPIRATION = classicalPoemEntries
+  .filter(entry => entry.text && entry.text.length <= 18)
+  .slice(0, 8)
+  .map(entry => {
+    const sourceLabel =
+      entry.author || entry.title
+        ? ` (${entry.author || '佚名'}${entry.title ? `《${entry.title}》` : ''})`
+        : ''
+    return `${entry.text}${sourceLabel}`
+  })
+
 function normalizePoemText(text: string): string {
   return text
     .replace(/```[\s\S]*?```/g, '')
@@ -32,6 +53,13 @@ function cleanPoemSegment(text: string): string {
   return text
     .replace(/[。！？；;,.!?、]+$/g, '')
     .replace(/[()（）]/g, '')
+    .trim()
+}
+
+function cleanPoemTitle(text: string): string {
+  return text
+    .replace(/[《》〈〉「」『』【】]/g, '')
+    .replace(/^\s*(题目|标题)\s*[:：]\s*/i, '')
     .trim()
 }
 
@@ -139,6 +167,15 @@ function isPoeticLine(text: string): boolean {
   return true
 }
 
+function isValidPoemTitle(text: string): boolean {
+  if (!text) {
+    return false
+  }
+
+  const cleaned = cleanPoemTitle(text).replace(/\s/g, '')
+  return /^[\u4e00-\u9fa5]{2,12}$/.test(cleaned)
+}
+
 function isPoeticCouplet(lines: string[]): boolean {
   if (lines.length !== 2) {
     return false
@@ -169,11 +206,12 @@ function generateBatchPoemPrompt(context: {
 }): string {
   const sections = [
     `请一次生成 ${context.batchSize} 组中文短联。`,
-    '每组必须严格输出为一行：第N组|上句|下句',
+    '每组必须严格输出为一行：第N组|题目|上句|下句',
+    '题目为 2-6 个汉字，不要使用“无题”“其一”“偶成”“诗作”等空泛题目。',
     '上句和下句都必须是完整短句，每句 4-8 个汉字。',
     '不要把单个意象词拆成三段，不要输出“月|窗前|照”这种格式。',
-    '正确示例：第1组|月沉荒渡口|灯照未归舟',
-    '正确示例：第2组|风停松子落|夜久石泉温',
+    '正确示例：第1组|夜渡|月沉荒渡口|灯照未归舟',
+    '正确示例：第2组|松声|风停松子落|夜久石泉温',
     '除结果行之外，不要输出任何说明、标题、解释、思维过程或 markdown。',
     '风格要冷静、含蓄、具象。',
   ]
@@ -181,6 +219,10 @@ function generateBatchPoemPrompt(context: {
   if (context.clickedPoems.length > 0) {
     sections.push('参考用户偏好：')
     sections.push(context.clickedPoems.join('\n'))
+  } else {
+    sections.push('用户还没有做出选择，请先从诗库语感里取灵感，再写出新的句子：')
+    sections.push(DEFAULT_ARCHIVAL_INSPIRATION.join('\n'))
+    sections.push('要求是借用这些诗句的语感与留白方式，不要直接改写、拼接或复述原句。')
   }
 
   if (context.avoidPoems && context.avoidPoems.length > 0) {
@@ -194,21 +236,22 @@ function generateBatchPoemPrompt(context: {
 function generateBatchPoemSystemPrompt(): string {
   return [
     '你是“诗云”写作引擎。',
-    '当用户要求多组短联时，必须严格逐行输出：第N组|上句|下句。',
+    '当用户要求多组短联时，必须严格逐行输出：第N组|题目|上句|下句。',
+    '题目必须简洁、具体、像诗题，不要写“无题”“其一”“感怀”这类泛题。',
     '上句和下句必须都是完整短句，不能拆成意象词、地点词、动作词三段。',
     '不要输出任何额外文本。',
     '上下句都必须是自然的中文诗性短句，每句 4-8 个汉字。',
   ].join('\n')
 }
 
-function extractBatchPoeticCouplets(raw: string): string[] {
+function extractBatchPoeticCouplets(raw: string): LLMBatchPoem[] {
   const normalized = normalizePoemText(raw)
   const lines = normalized
     .split('\n')
     .map(line => line.trim())
     .filter(Boolean)
 
-  const poems: string[] = []
+  const poems: LLMBatchPoem[] = []
 
   for (const line of lines) {
     const segments = line
@@ -216,28 +259,47 @@ function extractBatchPoeticCouplets(raw: string): string[] {
       .map(segment => cleanPoemSegment(segment))
       .filter(Boolean)
 
-    if (segments.length < 2) {
+    if (segments.length < 3) {
       continue
     }
 
-    const candidatePairs: Array<[string, string]> = []
+    const candidatePairs: Array<{ title?: string; left: string; right: string }> = []
 
-    if (segments.length >= 3) {
+    if (segments.length >= 4) {
       const maybeIndex = segments[0]
       if (/^第?\d+组?$/.test(maybeIndex)) {
-        candidatePairs.push([segments[1], segments[2]])
+        candidatePairs.push({
+          title: cleanPoemTitle(segments[1]),
+          left: segments[2],
+          right: segments[3],
+        })
       } else {
-        candidatePairs.push([segments[0], segments[1]])
-        candidatePairs.push([segments[1], segments[2]])
+        candidatePairs.push({
+          title: cleanPoemTitle(segments[0]),
+          left: segments[1],
+          right: segments[2],
+        })
+        candidatePairs.push({
+          title: cleanPoemTitle(segments[1]),
+          left: segments[2],
+          right: segments[3],
+        })
       }
     } else {
-      candidatePairs.push([segments[0], segments[1]])
+      candidatePairs.push({
+        title: undefined,
+        left: segments[0],
+        right: segments[1],
+      })
     }
 
-    for (const [left, right] of candidatePairs) {
+    for (const { title, left, right } of candidatePairs) {
       const poem = extractPoeticCouplet(`${left}\n${right}`)
-      if (poem) {
-        poems.push(poem)
+      if (poem && (!title || isValidPoemTitle(title))) {
+        poems.push({
+          text: poem,
+          title: title || undefined,
+        })
         break
       }
     }
@@ -271,7 +333,7 @@ function randomColor(): { r: number; g: number; b: number } {
 
 export class PoemGenerator {
   private llmConfig: LLMConfig
-  private llmBatchBuffer: string[] = []
+  private llmBatchBuffer: LLMBatchPoem[] = []
   private llmBatchPromise: Promise<void> | null = null
 
   constructor(llmConfig: LLMConfig) {
@@ -292,7 +354,7 @@ export class PoemGenerator {
   private async fetchSingleLLMBatch(context: {
     clickedPoems: string[]
     avoidPoems: string[]
-  }): Promise<string[]> {
+  }): Promise<LLMBatchPoem[]> {
     let responseText = ''
     const prompt = generateBatchPoemPrompt({
       clickedPoems: context.clickedPoems,
@@ -344,7 +406,7 @@ export class PoemGenerator {
   private async getLLMPoemFromBatch(context: {
     clickedPoems: string[]
     avoidPoems: string[]
-  }): Promise<string> {
+  }): Promise<LLMBatchPoem> {
     const avoidSet = new Set(context.avoidPoems.map(poem => poem.trim()).filter(Boolean))
     const normalizedAvoidSet = new Set(
       context.avoidPoems.map(poem => normalizePoemText(poem)).filter(Boolean)
@@ -356,9 +418,17 @@ export class PoemGenerator {
       }
 
       while (this.llmBatchBuffer.length > 0) {
-        const poem = this.llmBatchBuffer.shift() || ''
-        const normalizedPoem = normalizePoemText(poem)
-        if (poem && !avoidSet.has(poem) && !normalizedAvoidSet.has(normalizedPoem)) {
+        const poem = this.llmBatchBuffer.shift()
+        if (!poem) {
+          continue
+        }
+
+        const normalizedPoem = normalizePoemText(poem.text)
+        if (
+          poem.text &&
+          !avoidSet.has(poem.text) &&
+          !normalizedAvoidSet.has(normalizedPoem)
+        ) {
           if (this.llmBatchBuffer.length <= 2 && !this.llmBatchPromise) {
             void this.requestLLMBatch(context).catch(error => {
               console.warn('[PoemGenerator] Background LLM prefetch failed:', error)
@@ -396,15 +466,18 @@ export class PoemGenerator {
       shouldUseLLM(presetCount, context.clickRate)
 
     let text = ''
+    let title: string | undefined
     let source: GamePoemNode['source'] = 'template'
 
     if (useLLM) {
       try {
         lastLLMRequestTime = now
-        text = await this.getLLMPoemFromBatch({
+        const llmPoem = await this.getLLMPoemFromBatch({
           clickedPoems: context.clickedPoems,
           avoidPoems: avoidPoemList,
         })
+        text = llmPoem.text
+        title = llmPoem.title
 
         if (
           text &&
@@ -439,9 +512,19 @@ export class PoemGenerator {
       }
     }
 
+    const metadata =
+      source === 'template'
+        ? findPresetPoemMetadata(text)
+        : {
+            author: 'AI生成',
+            title: title || '诗云即时生成',
+          }
+
     return {
       id: Math.random().toString(36).substring(2, 9),
       text,
+      author: metadata?.author,
+      title: metadata?.title,
       position: randomPosition(),
       lifecycle: 'spawning',
       spawnTime: now,

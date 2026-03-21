@@ -4,6 +4,7 @@ import type {
   GamePoemNode,
   LLMConfig,
   LiveInsight,
+  LikedPoemRecord,
 } from '../types/game'
 
 interface GameStore {
@@ -23,6 +24,7 @@ interface GameStore {
   // 用户交互
   clickedPoemIds: string[]
   likedPoems: string[]
+  likedPoemRecords: LikedPoemRecord[]
   hoverDurations: Map<string, number>
 
   // 实时洞察
@@ -65,6 +67,7 @@ export const useGameStore = create<GameStore>(set => ({
   poemLifetime: INITIAL_CONFIG.poemLifetime,
   clickedPoemIds: [],
   likedPoems: [],
+  likedPoemRecords: [],
   hoverDurations: new Map(),
   insights: [],
   currentInsight: '',
@@ -102,6 +105,15 @@ export const useGameStore = create<GameStore>(set => ({
           ),
           clickedPoemIds: [...state.clickedPoemIds, id],
           likedPoems: [...state.likedPoems, poem.text],
+          likedPoemRecords: [
+            ...state.likedPoemRecords,
+            {
+              text: poem.text,
+              author: poem.author,
+              title: poem.title,
+              source: poem.source,
+            },
+          ],
         }
       }),
 
@@ -140,6 +152,7 @@ export const useGameStore = create<GameStore>(set => ({
       poems: [],
       clickedPoemIds: [],
       likedPoems: [],
+      likedPoemRecords: [],
       hoverDurations: new Map(),
       insights: [],
       currentInsight: '',
@@ -163,6 +176,7 @@ export const useGameStore = create<GameStore>(set => ({
       poems: [],
       clickedPoemIds: [],
       likedPoems: [],
+      likedPoemRecords: [],
       hoverDurations: new Map(),
       insights: [],
       currentInsight: '',
