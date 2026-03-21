@@ -11,10 +11,10 @@ const CONFIG = {
 let presetCount = 0
 let llmFailureCount = 0
 let lastLLMFailureTime = 0
-const FAILURE_COOLDOWN = 30000
+const FAILURE_COOLDOWN = 12000
 let lastLLMRequestTime = 0
-const REQUEST_COOLDOWN = 12000
-const LLM_BATCH_SIZE = 4
+const REQUEST_COOLDOWN = 3000
+const LLM_BATCH_SIZE = 8
 
 function normalizePoemText(text: string): string {
   return text
@@ -327,6 +327,11 @@ export class PoemGenerator {
       while (this.llmBatchBuffer.length > 0) {
         const poem = this.llmBatchBuffer.shift() || ''
         if (poem && !avoidSet.has(poem)) {
+          if (this.llmBatchBuffer.length <= 2 && !this.llmBatchPromise) {
+            void this.requestLLMBatch(context).catch(error => {
+              console.warn('[PoemGenerator] Background LLM prefetch failed:', error)
+            })
+          }
           return poem
         }
       }
