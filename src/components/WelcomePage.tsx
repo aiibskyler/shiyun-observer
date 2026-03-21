@@ -87,21 +87,25 @@ export function WelcomePage() {
         left: 0,
         right: 0,
         bottom: 0,
+        minHeight: '100dvh',
         background: 'linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%)',
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         justifyContent: 'center',
         fontFamily: 'sans-serif',
         zIndex: 1000,
-        padding: '20px',
+        padding:
+          'max(20px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom))',
         overflowY: 'auto',
         overflowX: 'hidden',
+        WebkitOverflowScrolling: 'touch',
       }}
     >
       <CosmicBackdrop variant="welcome" />
       <div
         style={{
           width: 'min(100%, 600px)',
+          margin: 'auto 0',
           display: 'flex',
           flexDirection: 'column',
           gap: '14px',
