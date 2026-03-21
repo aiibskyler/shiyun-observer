@@ -1021,7 +1021,7 @@ export function GameScene() {
       .catch(error => {
         console.warn('[GameScene] Initial LLM warmup failed:', error)
       })
-    void trySpawnBatch(14, 6)
+    void trySpawnBatch(14, 3)
 
     const animate = () => {
       animationFrameRef.current = requestAnimationFrame(animate)
@@ -1043,13 +1043,13 @@ export function GameScene() {
       const density = poems.length / maxPoems
 
       if (density < 0.26) {
-        void trySpawnBatch(4, 3)
+        void trySpawnBatch(4, 1)
       } else if (density < 0.52) {
-        void trySpawnBatch(3, 2)
+        void trySpawnBatch(3, 1)
       } else if (density < 0.75) {
-        void trySpawnBatch(2, 2)
+        void trySpawnBatch(2, 1)
       } else if (density < 0.9) {
-        void trySpawnBatch(1, 1)
+        void trySpawnBatch(1, 0)
       }
     }, 1500)
 

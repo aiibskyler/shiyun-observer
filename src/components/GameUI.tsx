@@ -149,26 +149,87 @@ export function GameUI() {
   return (
     <>
       {progressBursts.map(burst => (
-        <div
-          key={burst.id}
-          style={{
-            position: 'fixed',
-            left: `${burst.x}px`,
-            top: `${burst.y}px`,
-            width: '14px',
-            height: '14px',
-            borderRadius: '999px',
-            zIndex: 26,
-            pointerEvents: 'none',
-            background:
-              'radial-gradient(circle, rgba(255, 244, 186, 1) 0%, rgba(150, 212, 255, 0.92) 52%, rgba(150, 212, 255, 0) 100%)',
-            boxShadow: '0 0 22px rgba(162, 214, 255, 0.95)',
-            transform: 'translate(-50%, -50%)',
-            animation: 'meaningTransfer 900ms cubic-bezier(0.22, 1, 0.36, 1) forwards',
-            ['--travel-x' as string]: `${burst.targetX - burst.x}px`,
-            ['--travel-y' as string]: `${burst.targetY - burst.y}px`,
-          } as CSSProperties}
-        />
+        <>
+          <div
+            key={`${burst.id}-core`}
+            style={{
+              position: 'fixed',
+              left: `${burst.x}px`,
+              top: `${burst.y}px`,
+              width: '16px',
+              height: '16px',
+              borderRadius: '999px',
+              zIndex: 27,
+              pointerEvents: 'none',
+              background:
+                'radial-gradient(circle, rgba(255, 247, 205, 1) 0%, rgba(166, 226, 255, 0.98) 46%, rgba(112, 164, 255, 0.2) 100%)',
+              boxShadow:
+                '0 0 26px rgba(255, 238, 177, 0.95), 0 0 42px rgba(142, 211, 255, 0.85)',
+              transform: 'translate(-50%, -50%)',
+              animation: 'meaningTransferCore 980ms cubic-bezier(0.22, 1, 0.36, 1) forwards',
+              ['--travel-x' as string]: `${burst.targetX - burst.x}px`,
+              ['--travel-y' as string]: `${burst.targetY - burst.y}px`,
+            } as CSSProperties}
+          />
+          <div
+            key={`${burst.id}-trail`}
+            style={{
+              position: 'fixed',
+              left: `${burst.x}px`,
+              top: `${burst.y}px`,
+              width: '84px',
+              height: '18px',
+              borderRadius: '999px',
+              zIndex: 26,
+              pointerEvents: 'none',
+              background:
+                'linear-gradient(90deg, rgba(255, 238, 177, 0.0) 0%, rgba(255, 238, 177, 0.18) 18%, rgba(145, 213, 255, 0.72) 56%, rgba(255, 247, 205, 0.96) 100%)',
+              filter: 'blur(6px)',
+              transform: 'translate(-82%, -50%) rotate(-6deg)',
+              transformOrigin: '100% 50%',
+              animation: 'meaningTransferTrail 980ms cubic-bezier(0.22, 1, 0.36, 1) forwards',
+              ['--travel-x' as string]: `${burst.targetX - burst.x}px`,
+              ['--travel-y' as string]: `${burst.targetY - burst.y}px`,
+            } as CSSProperties}
+          />
+          <div
+            key={`${burst.id}-spark`}
+            style={{
+              position: 'fixed',
+              left: `${burst.x}px`,
+              top: `${burst.y}px`,
+              width: '8px',
+              height: '8px',
+              borderRadius: '999px',
+              zIndex: 25,
+              pointerEvents: 'none',
+              background: 'rgba(203, 236, 255, 0.95)',
+              boxShadow: '0 0 16px rgba(203, 236, 255, 0.85)',
+              transform: 'translate(-50%, -50%)',
+              animation: 'meaningTransferSpark 920ms cubic-bezier(0.22, 1, 0.36, 1) forwards',
+              ['--travel-x' as string]: `${burst.targetX - burst.x - 16}px`,
+              ['--travel-y' as string]: `${burst.targetY - burst.y + 8}px`,
+            } as CSSProperties}
+          />
+          <div
+            key={`${burst.id}-impact`}
+            style={{
+              position: 'fixed',
+              left: `${burst.targetX}px`,
+              top: `${burst.targetY}px`,
+              width: '18px',
+              height: '18px',
+              borderRadius: '999px',
+              zIndex: 24,
+              pointerEvents: 'none',
+              border: '2px solid rgba(255, 238, 177, 0.75)',
+              boxShadow: '0 0 20px rgba(155, 214, 255, 0.7)',
+              transform: 'translate(-50%, -50%) scale(0.2)',
+              opacity: 0,
+              animation: 'meaningTransferImpact 700ms ease-out 620ms forwards',
+            }}
+          />
+        </>
       ))}
 
       <div
@@ -450,9 +511,9 @@ export function GameUI() {
       </div>
 
       <style>{`
-        @keyframes meaningTransfer {
+        @keyframes meaningTransferCore {
           0% {
-            transform: translate(-50%, -50%) scale(0.7);
+            transform: translate(-50%, -50%) scale(0.55);
             opacity: 0;
           }
           18% {
@@ -462,7 +523,46 @@ export function GameUI() {
             opacity: 1;
           }
           100% {
-            transform: translate(calc(-50% + var(--travel-x)), calc(-50% + var(--travel-y))) scale(0.18);
+            transform: translate(calc(-50% + var(--travel-x)), calc(-50% + var(--travel-y))) scale(0.14);
+            opacity: 0;
+          }
+        }
+        @keyframes meaningTransferTrail {
+          0% {
+            transform: translate(-82%, -50%) scaleX(0.4) rotate(-10deg);
+            opacity: 0;
+          }
+          16% {
+            opacity: 0.95;
+          }
+          100% {
+            transform: translate(calc(-82% + var(--travel-x)), calc(-50% + var(--travel-y))) scaleX(1.15) rotate(4deg);
+            opacity: 0;
+          }
+        }
+        @keyframes meaningTransferSpark {
+          0% {
+            transform: translate(-50%, -50%) scale(0.35);
+            opacity: 0;
+          }
+          24% {
+            opacity: 0.9;
+          }
+          100% {
+            transform: translate(calc(-50% + var(--travel-x)), calc(-50% + var(--travel-y))) scale(0.08);
+            opacity: 0;
+          }
+        }
+        @keyframes meaningTransferImpact {
+          0% {
+            transform: translate(-50%, -50%) scale(0.2);
+            opacity: 0;
+          }
+          25% {
+            opacity: 1;
+          }
+          100% {
+            transform: translate(-50%, -50%) scale(2.8);
             opacity: 0;
           }
         }
